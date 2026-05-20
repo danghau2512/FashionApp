@@ -1,24 +1,17 @@
-package com.example.fashionshop.entity;
+package com.example.fashionshop.dto;
 
-import jakarta.persistence.*;
+public class CategoryResponse {
 
-@Entity
-@Table(name = "categories")
-public class Category {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
     private String description;
-
-    @Column(name = "image_url")
     private String imageUrl;
 
-    private String status;
-
-    public Category() {
+    public CategoryResponse(Long id, String name, String description, String imageUrl) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.imageUrl = imageUrl;
     }
 
     public Long getId() {
@@ -35,9 +28,5 @@ public class Category {
 
     public String getImageUrl() {
         return imageUrl;
-    }
-
-    public String getStatus() {
-        return status;
     }
 }

@@ -30,4 +30,8 @@ public class ProductController {
     public List<ProductResponse> searchProducts(@RequestParam String keyword) {
         return productService.searchProducts(keyword);
     }
+    @GetMapping("/category/{categoryId}")
+    public List<ProductResponse> getProductsByCategory(@PathVariable Long categoryId) {
+        return productService.getProductsByCategory(categoryId);
+    }
 }

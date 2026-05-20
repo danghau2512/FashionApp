@@ -36,6 +36,12 @@ public class ProductService {
                 .map(this::toProductResponse)
                 .toList();
     }
+    public List<ProductResponse> getProductsByCategory(Long categoryId) {
+        return productRepository.findByCategory_IdAndStatus(categoryId, "ACTIVE")
+                .stream()
+                .map(this::toProductResponse)
+                .toList();
+    }
 
     private ProductResponse toProductResponse(Product product) {
         return new ProductResponse(
