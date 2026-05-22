@@ -3,6 +3,7 @@ package com.example.fashionshop.service;
 import com.example.fashionshop.dto.CreateOrderRequest;
 import com.example.fashionshop.dto.OrderItemResponse;
 import com.example.fashionshop.dto.OrderResponse;
+import com.example.fashionshop.dto.OrderSummaryResponse;
 import com.example.fashionshop.entity.*;
 import com.example.fashionshop.repository.*;
 import org.springframework.stereotype.Service;
@@ -139,6 +140,73 @@ public class OrderService {
         cartItemRepository.deleteAll(selectedCartItems);
 
         return toOrderResponse(savedOrder, savedOrderItems);
+    }
+    public List<OrderSummaryResponse> getOrdersByUserId(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("Không tìm thấy người dùng");
+        }
+
+        return shopOrderRepository.findByUser_IdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toOrderSummaryResponse)
+                .toList();
+    }
+
+    public OrderResponse getOrderById(Long orderId) {
+        ShopOrder order = shopOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(orderId);
+
+        return toOrderResponse(order, orderItems);
+    }
+
+    private OrderSummaryResponse toOrderSummaryResponse(ShopOrder order) {
+        return new OrderSummaryResponse(
+                order.getId(),
+                order.getUser().getId(),
+                order.getReceiverName(),
+                order.getTotalAmount(),
+                order.getPaymentMethod(),
+                order.getPaymentStatus(),
+                order.getOrderStatus(),
+                order.getCreatedAt()
+        );
+    }
+    @Transactional
+    public OrderResponse cancelOrder(Long orderId) {
+        ShopOrder order = shopOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        if ("CANCELLED".equals(order.getOrderStatus())) {
+            throw new RuntimeException("Đơn hàng đã được hủy trước đó");
+        }
+
+        if (!"PENDING".equals(order.getOrderStatus())) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng đang chờ xử lý");
+        }
+
+        if ("PAID".equals(order.getPaymentStatus())) {
+            throw new RuntimeException("Đơn hàng đã thanh toán, không được hủy");
+        }
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(orderId);
+
+        for (OrderItem item : orderItems) {
+            ProductVariant variant = item.getVariant();
+
+            if (variant != null) {
+                variant.setQuantity(variant.getQuantity() + item.getQuantity());
+                productVariantRepository.save(variant);
+            }
+        }
+
+        order.setOrderStatus("CANCELLED");
+        order.setPaymentStatus("CANCELLED");
+
+        ShopOrder savedOrder = shopOrderRepository.save(order);
+
+        return toOrderResponse(savedOrder, orderItems);
     }
 
     private OrderResponse toOrderResponse(ShopOrder order, List<OrderItem> orderItems) {
