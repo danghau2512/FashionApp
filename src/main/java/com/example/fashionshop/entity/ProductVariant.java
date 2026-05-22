@@ -55,4 +55,7 @@ public class ProductVariant {
     public String getStatus() {
         return status;
     }
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 }
