@@ -19,7 +19,13 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import android.content.Intent;
+import android.widget.Button;
+import android.widget.Toast;
 
+import com.example.fashionshopmobile.activity.LoginActivity;
+import com.example.fashionshopmobile.utils.SessionManager;
+import com.google.firebase.auth.FirebaseAuth;
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView recyclerProducts;
@@ -27,11 +33,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtMessage;
 
     private ProductAdapter productAdapter;
+    private Button btnLogout;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sessionManager = new SessionManager(this);
+
+        btnLogout = findViewById(R.id.btnLogout);
+
+        btnLogout.setOnClickListener(v -> logout());
 
         recyclerProducts = findViewById(R.id.recyclerProducts);
         progressBar = findViewById(R.id.progressBar);
@@ -77,5 +90,17 @@ public class MainActivity extends AppCompatActivity {
                 txtMessage.setText("Lỗi kết nối API: " + t.getMessage());
             }
         });
+    }
+    private void logout() {
+        FirebaseAuth.getInstance().signOut();
+
+        sessionManager.logout();
+
+        Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show();
+
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }
