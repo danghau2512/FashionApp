@@ -2,6 +2,7 @@ package com.example.fashionshopmobile;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -10,11 +11,18 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
+import com.example.fashionshopmobile.activity.ProductListActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
+import com.example.fashionshopmobile.adapter.CategoryAdapter;
+import com.example.fashionshopmobile.model.Category;
+
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -24,12 +32,18 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tvHello, btnCart;
+    private TextView tvHello, btnCart,tvProductSectionTitle,tvViewAllProducts;
     private RecyclerView rvProducts;
     private BottomNavigationView bottomNavigation;
 
     private ProductAdapter productAdapter;
     private SessionManager sessionManager;
+    private RecyclerView rvCategories;
+    private CategoryAdapter categoryAdapter;
+    private Long currentCategoryId = 0L;
+    private String currentCategoryName = "Tất cả sản phẩm";
+
+    private static final int HOME_PRODUCT_LIMIT = 8;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,8 +55,10 @@ public class MainActivity extends AppCompatActivity {
         initViews();
         showUserName();
         setupProductList();
+        setupCategoryList();
         setupClickEvents();
 
+        loadCategories();
         loadProducts();
     }
 
@@ -50,8 +66,13 @@ public class MainActivity extends AppCompatActivity {
         tvHello = findViewById(R.id.tvHello);
         btnCart = findViewById(R.id.btnCart);
         rvProducts = findViewById(R.id.rvProducts);
+        rvCategories = findViewById(R.id.rvCategories);
+        tvProductSectionTitle = findViewById(R.id.tvProductSectionTitle);
         bottomNavigation = findViewById(R.id.bottomNavigation);
+        tvViewAllProducts = findViewById(R.id.tvViewAllProducts);
+
     }
+
 
     private void showUserName() {
         String fullName = sessionManager.getFullName();
@@ -75,33 +96,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickEvents() {
-        btnCart.setOnClickListener(v -> {
-            Toast.makeText(this, "Mở giỏ hàng sau", Toast.LENGTH_SHORT).show();
-
-            // Sau này khi có CartActivity thì mở như này:
-            // Intent intent = new Intent(MainActivity.this, CartActivity.class);
-            // startActivity(intent);
-        });
-
-        bottomNavigation.setSelectedItemId(R.id.nav_home);
-
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.nav_home) {
-                return true;
-            } else if (id == R.id.nav_orders) {
-                Toast.makeText(this, "Mở đơn hàng sau", Toast.LENGTH_SHORT).show();
-                return true;
-            } else if (id == R.id.nav_store) {
-                Toast.makeText(this, "Mở cửa hàng sau", Toast.LENGTH_SHORT).show();
-                return true;
-            } else if (id == R.id.nav_profile) {
-                Toast.makeText(this, "Mở tài khoản sau", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-
-            return false;
+        tvViewAllProducts.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProductListActivity.class);
+            intent.putExtra("category_id", currentCategoryId);
+            intent.putExtra("category_name", currentCategoryName);
+            startActivity(intent);
         });
     }
 
@@ -110,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    productAdapter.setData(response.body());
+                    showHomeProducts(response.body());
                 } else {
                     Toast.makeText(MainActivity.this, "Không lấy được danh sách sản phẩm", Toast.LENGTH_SHORT).show();
                 }
@@ -121,5 +120,88 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Lỗi API: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+    private void setupCategoryList() {
+        categoryAdapter = new CategoryAdapter(category -> {
+            if (category.getId() == 0L) {
+                currentCategoryId = 0L;
+                currentCategoryName = "Tất cả sản phẩm";
+
+                tvProductSectionTitle.setText("Sản phẩm mới");
+                loadProducts();
+            } else {
+                currentCategoryId = category.getId();
+                currentCategoryName = category.getName();
+
+                tvProductSectionTitle.setText(category.getName());
+                loadProductsByCategory(category.getId());
+            }
+        });
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(
+                this,
+                LinearLayoutManager.HORIZONTAL,
+                false
+        );
+
+        rvCategories.setLayoutManager(layoutManager);
+        rvCategories.setAdapter(categoryAdapter);
+    }
+    private void loadCategories() {
+        ApiClient.getApiService().getCategories().enqueue(new Callback<List<Category>>() {
+            @Override
+            public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Category> categories = new ArrayList<>();
+
+                    categories.add(new Category(0L, "Tất cả"));
+                    categories.addAll(response.body());
+
+                    categoryAdapter.setData(categories);
+                } else {
+                    Toast.makeText(MainActivity.this, "Không lấy được danh mục", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Category>> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi danh mục: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    private void loadProductsByCategory(Long categoryId) {
+        ApiClient.getApiService().getProductsByCategory(categoryId).enqueue(new Callback<List<Product>>() {
+            @Override
+            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    showHomeProducts(response.body());
+                } else {
+                    Toast.makeText(MainActivity.this, "Không lấy được sản phẩm theo danh mục", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Product>> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi lọc sản phẩm: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    private void showHomeProducts(List<Product> products) {
+        if (products == null || products.isEmpty()) {
+            productAdapter.setData(new ArrayList<>());
+            tvViewAllProducts.setVisibility(View.GONE);
+            return;
+        }
+
+        int endIndex = Math.min(products.size(), HOME_PRODUCT_LIMIT);
+
+        List<Product> homeProducts = new ArrayList<>(products.subList(0, endIndex));
+        productAdapter.setData(homeProducts);
+
+        if (products.size() > HOME_PRODUCT_LIMIT) {
+            tvViewAllProducts.setVisibility(View.VISIBLE);
+        } else {
+            tvViewAllProducts.setVisibility(View.GONE);
+        }
     }
 }

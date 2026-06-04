@@ -1,5 +1,6 @@
 package com.example.fashionshopmobile.api;
 
+import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.ProductVariant;
 import com.example.fashionshopmobile.model.User;
@@ -25,4 +26,9 @@ public interface ApiService {
 
     @POST("api/users/sync")
     Call<User> syncUser(@Body UserSyncRequest request);
+
+    @GET("api/categories")
+    Call<List<Category>> getCategories();
+    @GET("api/products/category/{categoryId}")
+    Call<List<Product>> getProductsByCategory(@Path("categoryId") Long categoryId);
 }
