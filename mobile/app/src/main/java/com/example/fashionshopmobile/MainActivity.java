@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private Long currentCategoryId = 0L;
     private String currentCategoryName = "Tất cả sản phẩm";
 
-    private static final int HOME_PRODUCT_LIMIT = 8;
+    private static final int HOME_PRODUCT_LIMIT = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
