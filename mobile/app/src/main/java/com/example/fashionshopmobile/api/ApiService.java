@@ -3,6 +3,7 @@ package com.example.fashionshopmobile.api;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.ProductVariant;
+import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.request.UserSyncRequest;
 
@@ -31,4 +32,10 @@ public interface ApiService {
     Call<List<Category>> getCategories();
     @GET("api/products/category/{categoryId}")
     Call<List<Product>> getProductsByCategory(@Path("categoryId") Long categoryId);
+
+    @GET("api/stores")
+    Call<List<StoreLocation>> getStores();
+
+    @GET("api/stores/{id}")
+    Call<StoreLocation> getStoreById(@Path("id") Long id);
 }
