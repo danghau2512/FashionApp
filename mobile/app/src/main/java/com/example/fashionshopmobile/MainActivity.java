@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.activity.ProductListActivity;
+import com.example.fashionshopmobile.activity.StoreMapActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.Product;
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         loadCategories();
         loadProducts();
+        setupBottomNavigation();
     }
 
     private void initViews() {
@@ -102,6 +104,63 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("category_name", currentCategoryName);
             startActivity(intent);
         });
+
+    }
+    private void setupBottomNavigation() {
+        // Đánh dấu tab Trang chủ đang được chọn
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            // Đang ở trang chủ nên không mở Activity mới
+            if (itemId == R.id.nav_home) {
+                return true;
+            }
+
+            // Chức năng đơn hàng chưa hoàn thành
+            if (itemId == R.id.nav_orders) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Chức năng đơn hàng đang được phát triển",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return false;
+            }
+
+            // Mở màn hình bản đồ cửa hàng
+            if (itemId == R.id.nav_store) {
+                Intent intent = new Intent(
+                        MainActivity.this,
+                        StoreMapActivity.class
+                );
+
+                startActivity(intent);
+                return true;
+            }
+
+            // Chức năng tài khoản do thành viên khác thực hiện
+            if (itemId == R.id.nav_profile) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Chức năng tài khoản đang được phát triển",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return false;
+            }
+
+            return false;
+        });
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.nav_home);
+        }
     }
 
     private void loadProducts() {
@@ -123,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private void setupCategoryList() {
         categoryAdapter = new CategoryAdapter(category -> {
-            if (category.getId() == 0L) {
+            if (Long.valueOf(0L).equals(category.getId())) {
                 currentCategoryId = 0L;
                 currentCategoryName = "Tất cả sản phẩm";
 
