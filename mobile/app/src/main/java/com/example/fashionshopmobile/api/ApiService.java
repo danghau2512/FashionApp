@@ -51,7 +51,7 @@ public interface ApiService {
     Call<Void> deleteCartItem(@Path("cartItemId") Long cartItemId);
     @POST("api/cart")
     Call<CartItem> addToCart(@Body AddCartRequest request);
-}
+
 
     @GET("api/stores")
     Call<List<StoreLocation>> getStores();

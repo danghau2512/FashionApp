@@ -64,18 +64,14 @@ public class MainActivity extends AppCompatActivity {
         setupProductList();
         setupCategoryList();
         setupClickEvents();
+        setupBottomNavigation();
 
         loadCategories();
         loadProducts();
         loadCartCount();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadCartCount();
-        setupBottomNavigation();
-    }
+
 
     private void initViews() {
         tvHello = findViewById(R.id.tvHello);
@@ -110,16 +106,6 @@ public class MainActivity extends AppCompatActivity {
 
         rvProducts.setLayoutManager(new GridLayoutManager(this, 2));
         rvProducts.setAdapter(productAdapter);
-    }
-
-    private void setupClickEvents() {
-        tvViewAllProducts.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ProductListActivity.class);
-            intent.putExtra("category_id", currentCategoryId);
-            intent.putExtra("category_name", currentCategoryName);
-            startActivity(intent);
-        });
-
     }
     private void setupBottomNavigation() {
         // Đánh dấu tab Trang chủ đang được chọn
@@ -173,28 +159,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        loadCartCount();
+
         if (bottomNavigation != null) {
             bottomNavigation.setSelectedItemId(R.id.nav_home);
         }
     }
 
-    private void loadProducts() {
-        ApiClient.getApiService().getProducts().enqueue(new Callback<List<Product>>() {
-            @Override
-            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    showHomeProducts(response.body());
-                } else {
-                    Toast.makeText(MainActivity.this, "Không lấy được danh sách sản phẩm", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Lỗi API: " + t.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
-    }
     private void setupCategoryList() {
         categoryAdapter = new CategoryAdapter(category -> {
             if (Long.valueOf(0L).equals(category.getId())) {
