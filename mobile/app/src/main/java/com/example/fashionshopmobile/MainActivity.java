@@ -8,23 +8,23 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.fashionshopmobile.activity.CartActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.activity.ProductListActivity;
+import com.example.fashionshopmobile.adapter.CategoryAdapter;
 import com.example.fashionshopmobile.activity.StoreMapActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
+import com.example.fashionshopmobile.model.CartItem;
+import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import com.example.fashionshopmobile.adapter.CategoryAdapter;
-import com.example.fashionshopmobile.model.Category;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
 import retrofit2.Call;
@@ -33,14 +33,20 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tvHello, btnCart,tvProductSectionTitle,tvViewAllProducts;
+    private TextView tvHello;
+    private View btnCart;
+    private TextView txtCartBadge;
+    private TextView tvProductSectionTitle;
+    private TextView tvViewAllProducts;
+
     private RecyclerView rvProducts;
+    private RecyclerView rvCategories;
     private BottomNavigationView bottomNavigation;
 
     private ProductAdapter productAdapter;
-    private SessionManager sessionManager;
-    private RecyclerView rvCategories;
     private CategoryAdapter categoryAdapter;
+    private SessionManager sessionManager;
+
     private Long currentCategoryId = 0L;
     private String currentCategoryName = "Tất cả sản phẩm";
 
@@ -61,20 +67,29 @@ public class MainActivity extends AppCompatActivity {
 
         loadCategories();
         loadProducts();
+        loadCartCount();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadCartCount();
         setupBottomNavigation();
     }
 
     private void initViews() {
         tvHello = findViewById(R.id.tvHello);
         btnCart = findViewById(R.id.btnCart);
+        txtCartBadge = findViewById(R.id.txtCartBadge);
+
         rvProducts = findViewById(R.id.rvProducts);
         rvCategories = findViewById(R.id.rvCategories);
+
         tvProductSectionTitle = findViewById(R.id.tvProductSectionTitle);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
         tvViewAllProducts = findViewById(R.id.tvViewAllProducts);
 
+        bottomNavigation = findViewById(R.id.bottomNavigation);
     }
-
 
     private void showUserName() {
         String fullName = sessionManager.getFullName();
@@ -206,6 +221,21 @@ public class MainActivity extends AppCompatActivity {
         rvCategories.setLayoutManager(layoutManager);
         rvCategories.setAdapter(categoryAdapter);
     }
+
+    private void setupClickEvents() {
+        tvViewAllProducts.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProductListActivity.class);
+            intent.putExtra("category_id", currentCategoryId);
+            intent.putExtra("category_name", currentCategoryName);
+            startActivity(intent);
+        });
+
+        btnCart.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CartActivity.class);
+            startActivity(intent);
+        });
+    }
+
     private void loadCategories() {
         ApiClient.getApiService().getCategories().enqueue(new Callback<List<Category>>() {
             @Override
@@ -228,6 +258,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void loadProducts() {
+        ApiClient.getApiService().getProducts().enqueue(new Callback<List<Product>>() {
+            @Override
+            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    showHomeProducts(response.body());
+                } else {
+                    Toast.makeText(MainActivity.this, "Không lấy được danh sách sản phẩm", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Product>> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi API: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
     private void loadProductsByCategory(Long categoryId) {
         ApiClient.getApiService().getProductsByCategory(categoryId).enqueue(new Callback<List<Product>>() {
             @Override
@@ -245,6 +294,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     private void showHomeProducts(List<Product> products) {
         if (products == null || products.isEmpty()) {
             productAdapter.setData(new ArrayList<>());
@@ -261,6 +311,62 @@ public class MainActivity extends AppCompatActivity {
             tvViewAllProducts.setVisibility(View.VISIBLE);
         } else {
             tvViewAllProducts.setVisibility(View.GONE);
+        }
+    }
+
+    private void loadCartCount() {
+        Long userId = sessionManager.getUserId();
+
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (userId == null) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        ApiClient.getApiService().getCartByUserId(userId).enqueue(new Callback<List<CartItem>>() {
+            @Override
+            public void onResponse(Call<List<CartItem>> call, Response<List<CartItem>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    int totalQuantity = 0;
+
+                    for (CartItem item : response.body()) {
+                        if (item.getQuantity() != null) {
+                            totalQuantity += item.getQuantity();
+                        }
+                    }
+
+                    showCartBadge(totalQuantity);
+                } else {
+                    txtCartBadge.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<CartItem>> call, Throwable t) {
+                txtCartBadge.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private void showCartBadge(int totalQuantity) {
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (totalQuantity <= 0) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        txtCartBadge.setVisibility(View.VISIBLE);
+
+        if (totalQuantity > 99) {
+            txtCartBadge.setText("99+");
+        } else {
+            txtCartBadge.setText(String.valueOf(totalQuantity));
         }
     }
 }
