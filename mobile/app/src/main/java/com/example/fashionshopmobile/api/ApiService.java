@@ -3,6 +3,7 @@ package com.example.fashionshopmobile.api;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.ProductVariant;
+import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.request.UserSyncRequest;
 import com.example.fashionshopmobile.model.CartItem;
@@ -50,4 +51,11 @@ public interface ApiService {
     Call<Void> deleteCartItem(@Path("cartItemId") Long cartItemId);
     @POST("api/cart")
     Call<CartItem> addToCart(@Body AddCartRequest request);
+}
+
+    @GET("api/stores")
+    Call<List<StoreLocation>> getStores();
+
+    @GET("api/stores/{id}")
+    Call<StoreLocation> getStoreById(@Path("id") Long id);
 }

@@ -15,6 +15,7 @@ import com.example.fashionshopmobile.activity.CartActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.activity.ProductListActivity;
 import com.example.fashionshopmobile.adapter.CategoryAdapter;
+import com.example.fashionshopmobile.activity.StoreMapActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.CartItem;
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadCartCount();
+        setupBottomNavigation();
     }
 
     private void initViews() {
@@ -110,9 +112,92 @@ public class MainActivity extends AppCompatActivity {
         rvProducts.setAdapter(productAdapter);
     }
 
+    private void setupClickEvents() {
+        tvViewAllProducts.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProductListActivity.class);
+            intent.putExtra("category_id", currentCategoryId);
+            intent.putExtra("category_name", currentCategoryName);
+            startActivity(intent);
+        });
+
+    }
+    private void setupBottomNavigation() {
+        // Đánh dấu tab Trang chủ đang được chọn
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            // Đang ở trang chủ nên không mở Activity mới
+            if (itemId == R.id.nav_home) {
+                return true;
+            }
+
+            // Chức năng đơn hàng chưa hoàn thành
+            if (itemId == R.id.nav_orders) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Chức năng đơn hàng đang được phát triển",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return false;
+            }
+
+            // Mở màn hình bản đồ cửa hàng
+            if (itemId == R.id.nav_store) {
+                Intent intent = new Intent(
+                        MainActivity.this,
+                        StoreMapActivity.class
+                );
+
+                startActivity(intent);
+                return true;
+            }
+
+            // Chức năng tài khoản do thành viên khác thực hiện
+            if (itemId == R.id.nav_profile) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Chức năng tài khoản đang được phát triển",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return false;
+            }
+
+            return false;
+        });
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.nav_home);
+        }
+    }
+
+    private void loadProducts() {
+        ApiClient.getApiService().getProducts().enqueue(new Callback<List<Product>>() {
+            @Override
+            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    showHomeProducts(response.body());
+                } else {
+                    Toast.makeText(MainActivity.this, "Không lấy được danh sách sản phẩm", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Product>> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi API: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
     private void setupCategoryList() {
         categoryAdapter = new CategoryAdapter(category -> {
-            if (category.getId() == 0L) {
+            if (Long.valueOf(0L).equals(category.getId())) {
                 currentCategoryId = 0L;
                 currentCategoryName = "Tất cả sản phẩm";
 
