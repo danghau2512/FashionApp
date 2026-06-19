@@ -15,6 +15,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FashionShopMobile">
 
+
+        <activity
+            android:name=".activity.ProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.EditProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AddressActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AddEditAddressActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.ForgotPasswordActivity"
             android:exported="false" />
