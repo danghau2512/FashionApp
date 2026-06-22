@@ -58,11 +58,12 @@
         <activity
             android:name=".activity.StoreMapActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".activity.AdminDashboardActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.LoginActivity"
             android:exported="true">
-
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
