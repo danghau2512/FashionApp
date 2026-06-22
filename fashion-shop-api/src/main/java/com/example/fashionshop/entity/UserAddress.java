@@ -30,6 +30,15 @@ public class UserAddress {
     private String district;
     private String province;
 
+    @Column(name = "province_id")
+    private Integer provinceId;
+
+    @Column(name = "district_id")
+    private Integer districtId;
+
+    @Column(name = "ward_code")
+    private String wardCode;
+
     private BigDecimal latitude;
     private BigDecimal longitude;
 
@@ -146,5 +155,27 @@ public class UserAddress {
 
     public void setDefaultAddress(Boolean defaultAddress) {
         this.defaultAddress = defaultAddress;
+    }
+    public Integer getProvinceId() {
+        return provinceId;
+    }
+
+    public Integer getDistrictId() {
+        return districtId;
+    }
+
+    public String getWardCode() {
+        return wardCode;
+    }
+    public void setProvinceId(Integer provinceId) {
+        this.provinceId = provinceId;
+    }
+
+    public void setDistrictId(Integer districtId) {
+        this.districtId = districtId;
+    }
+
+    public void setWardCode(String wardCode) {
+        this.wardCode = wardCode;
     }
 }

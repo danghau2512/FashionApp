@@ -43,6 +43,9 @@ public class UserAddressService {
         address.setWard(request.getWard());
         address.setDistrict(request.getDistrict());
         address.setProvince(request.getProvince());
+        address.setProvinceId(request.getProvinceId());
+        address.setDistrictId(request.getDistrictId());
+        address.setWardCode(request.getWardCode());
         address.setLatitude(request.getLatitude());
         address.setLongitude(request.getLongitude());
         address.setDefaultAddress(shouldSetDefault);
@@ -80,6 +83,9 @@ public class UserAddressService {
         address.setWard(request.getWard());
         address.setDistrict(request.getDistrict());
         address.setProvince(request.getProvince());
+        address.setProvinceId(request.getProvinceId());
+        address.setDistrictId(request.getDistrictId());
+        address.setWardCode(request.getWardCode());
         address.setLatitude(request.getLatitude());
         address.setLongitude(request.getLongitude());
 
@@ -137,6 +143,9 @@ public class UserAddressService {
                 address.getWard(),
                 address.getDistrict(),
                 address.getProvince(),
+                address.getProvinceId(),
+                address.getDistrictId(),
+                address.getWardCode(),
                 address.getLatitude(),
                 address.getLongitude(),
                 address.getDefaultAddress()

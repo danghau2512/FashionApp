@@ -2,6 +2,7 @@ package com.example.fashionshopmobile.api;
 
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
+import com.example.fashionshopmobile.model.OrderResponse;
 import com.example.fashionshopmobile.model.OrderSummary;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.ProductVariant;
@@ -10,10 +11,13 @@ import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
+import com.example.fashionshopmobile.request.CreateOrderRequest;
 import com.example.fashionshopmobile.request.UpdateCartItemRequest;
 import com.example.fashionshopmobile.request.UpdateUserRequest;
 import com.example.fashionshopmobile.request.UserSyncRequest;
-
+import com.example.fashionshopmobile.model.shipping.GhnDistrict;
+import com.example.fashionshopmobile.model.shipping.GhnProvince;
+import com.example.fashionshopmobile.model.shipping.GhnWard;
 import java.util.List;
 
 import retrofit2.Call;
@@ -101,4 +105,16 @@ public interface ApiService {
 
     @GET("api/stores/{id}")
     Call<StoreLocation> getStoreById(@Path("id") Long id);
+
+    @GET("api/shipping/provinces")
+    Call<List<GhnProvince>> getGhnProvinces();
+
+    @GET("api/shipping/districts")
+    Call<List<GhnDistrict>> getGhnDistricts(@Query("provinceId") Integer provinceId);
+
+    @GET("api/shipping/wards")
+    Call<List<GhnWard>> getGhnWards(@Query("districtId") Integer districtId);
+
+    @POST("api/orders")
+    Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
 }
