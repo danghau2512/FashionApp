@@ -42,12 +42,23 @@ public class LoginActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         sessionManager = new SessionManager(this);
 
-        if (sessionManager.isLoggedIn()) {
-            openMainActivity();
+        initViews();
+
+        // Quan trọng:
+        // Nếu Firebase vẫn còn user đang đăng nhập,
+        // gọi lại backend để lấy role mới nhất trong DB.
+        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+
+        if (sessionManager.isLoggedIn() && currentUser != null) {
+            showLoading(true);
+            syncUserToBackend(currentUser);
             return;
         }
 
-        initViews();
+        // Nếu session còn nhưng Firebase không còn user thì xóa session cũ.
+        if (sessionManager.isLoggedIn() && currentUser == null) {
+            sessionManager.logout();
+        }
 
         btnLogin.setOnClickListener(v -> loginUser());
 
@@ -85,8 +96,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        progressBar.setVisibility(View.VISIBLE);
-        btnLogin.setEnabled(false);
+        showLoading(true);
 
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
@@ -101,7 +111,11 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     } else {
                         showLoading(false);
-                        Toast.makeText(this, "Đăng nhập thất bại: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(
+                                this,
+                                "Đăng nhập thất bại: " + task.getException().getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show();
                     }
                 });
     }
@@ -132,11 +146,23 @@ public class LoginActivity extends AppCompatActivity {
 
                     sessionManager.saveUser(user);
 
-                    Toast.makeText(LoginActivity.this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
-                    openMainActivity();
+                    Toast.makeText(
+                            LoginActivity.this,
+                            "Role backend = " + user.getRole()
+                                    + " | Role session = " + sessionManager.getRole(),
+                            Toast.LENGTH_LONG
+                    ).show();
+
+                    openHomeByRole();
                 } else {
                     firebaseAuth.signOut();
-                    Toast.makeText(LoginActivity.this, "Firebase đăng nhập được nhưng sync user thất bại", Toast.LENGTH_LONG).show();
+                    sessionManager.logout();
+
+                    Toast.makeText(
+                            LoginActivity.this,
+                            "Firebase đăng nhập được nhưng sync user thất bại",
+                            Toast.LENGTH_LONG
+                    ).show();
                 }
             }
 
@@ -144,8 +170,13 @@ public class LoginActivity extends AppCompatActivity {
             public void onFailure(Call<User> call, Throwable t) {
                 showLoading(false);
                 firebaseAuth.signOut();
+                sessionManager.logout();
 
-                Toast.makeText(LoginActivity.this, "Không gọi được API sync user: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(
+                        LoginActivity.this,
+                        "Không gọi được API sync user: " + t.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
             }
         });
     }
@@ -163,8 +194,15 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setEnabled(!isLoading);
     }
 
-    private void openMainActivity() {
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+    private void openHomeByRole() {
+        Intent intent;
+
+        if (sessionManager.isAdmin()) {
+            intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+        } else {
+            intent = new Intent(LoginActivity.this, MainActivity.class);
+        }
+
         startActivity(intent);
         finish();
     }

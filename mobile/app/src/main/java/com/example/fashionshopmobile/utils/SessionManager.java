@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import com.example.fashionshopmobile.model.User;
 
 public class SessionManager {
+
     private static final String PREF_NAME = "fashion_shop_session";
 
     private static final String KEY_LOGGED_IN = "logged_in";
@@ -13,6 +14,8 @@ public class SessionManager {
     private static final String KEY_FIREBASE_UID = "firebase_uid";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_FULL_NAME = "full_name";
+    private static final String KEY_ROLE = "role";
+    private static final String KEY_STATUS = "status";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
@@ -28,6 +31,8 @@ public class SessionManager {
         editor.putString(KEY_FIREBASE_UID, user.getFirebaseUid());
         editor.putString(KEY_EMAIL, user.getEmail());
         editor.putString(KEY_FULL_NAME, user.getFullName());
+        editor.putString(KEY_ROLE, user.getRole());
+        editor.putString(KEY_STATUS, user.getStatus());
         editor.apply();
     }
 
@@ -37,9 +42,11 @@ public class SessionManager {
 
     public Long getUserId() {
         long userId = sharedPreferences.getLong(KEY_USER_ID, -1);
+
         if (userId == -1) {
             return null;
         }
+
         return userId;
     }
 
@@ -53,6 +60,19 @@ public class SessionManager {
 
     public String getFullName() {
         return sharedPreferences.getString(KEY_FULL_NAME, null);
+    }
+
+    public String getRole() {
+        return sharedPreferences.getString(KEY_ROLE, "CUSTOMER");
+    }
+
+    public String getStatus() {
+        return sharedPreferences.getString(KEY_STATUS, "ACTIVE");
+    }
+
+    public boolean isAdmin() {
+        String role = getRole();
+        return role != null && role.equalsIgnoreCase("ADMIN");
     }
 
     public void logout() {

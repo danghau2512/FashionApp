@@ -1,5 +1,6 @@
 package com.example.fashionshopmobile.api;
 
+import com.example.fashionshopmobile.model.AdminDashboard;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.OrderSummary;
@@ -101,4 +102,7 @@ public interface ApiService {
 
     @GET("api/stores/{id}")
     Call<StoreLocation> getStoreById(@Path("id") Long id);
+
+    @GET("api/admin/dashboard")
+    Call<AdminDashboard> getAdminDashboard();
 }
