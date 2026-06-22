@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fashionshopmobile.R;
 import com.example.fashionshopmobile.model.Product;
+import com.example.fashionshopmobile.utils.ImageUrlUtils;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -59,15 +60,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         holder.tvProductPrice.setText(formatPrice(product));
 
-        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-            Glide.with(holder.itemView.getContext())
-                    .load(product.getImageUrl())
-                    .placeholder(R.mipmap.ic_launcher)
-                    .error(R.mipmap.ic_launcher)
-                    .into(holder.imgProduct);
-        } else {
-            holder.imgProduct.setImageResource(R.mipmap.ic_launcher);
-        }
+        String imageUrl = ImageUrlUtils.getFullImageUrl(product.getImageUrl());
+
+        Glide.with(holder.itemView.getContext())
+                .load(imageUrl)
+                .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher)
+                .into(holder.imgProduct);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -75,7 +74,6 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             }
         });
     }
-
     @Override
     public int getItemCount() {
         return productList.size();

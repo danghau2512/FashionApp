@@ -1,27 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:id="@+id/layoutVariantRoot"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:minWidth="105dp"
     android:orientation="vertical"
     android:padding="10dp"
-    android:layout_marginTop="6dp"
-    android:background="#F2F2F2">
+    android:layout_marginEnd="8dp"
+    android:background="@drawable/bg_variant_normal">
 
     <TextView
         android:id="@+id/txtVariantSizeColor"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Size L - Đen"
-        android:textSize="15sp"
-        android:textStyle="bold" />
+        android:text="Đen · M"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/dark_text" />
 
     <TextView
         android:id="@+id/txtVariantQuantity"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Còn 30 sản phẩm"
-        android:textSize="14sp"
-        android:textColor="#666666"
+        android:text="Còn 10"
+        android:textSize="12sp"
+        android:textColor="@color/gray_text"
         android:layout_marginTop="4dp" />
 
 </LinearLayout>

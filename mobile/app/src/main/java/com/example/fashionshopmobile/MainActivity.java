@@ -1,58 +1,62 @@
 package com.example.fashionshopmobile;
 
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.example.fashionshopmobile.activity.CartActivity;
+import com.example.fashionshopmobile.activity.EditProfileActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.activity.ProductListActivity;
+import com.example.fashionshopmobile.activity.ProfileActivity;
+import com.example.fashionshopmobile.activity.StoreMapActivity;
+import com.example.fashionshopmobile.adapter.CategoryAdapter;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
+import com.example.fashionshopmobile.model.CartItem;
+import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.Product;
+import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import com.example.fashionshopmobile.activity.ProfileActivity;
-
-import com.example.fashionshopmobile.adapter.CategoryAdapter;
-import com.example.fashionshopmobile.model.Category;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import android.widget.ImageView;
-
-import com.bumptech.glide.Glide;
-import com.example.fashionshopmobile.activity.EditProfileActivity;
-import com.example.fashionshopmobile.model.User;
-
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tvHello, btnCart, tvProductSectionTitle, tvViewAllProducts;
+    private TextView tvHello;
+    private View btnCart;
+    private TextView txtCartBadge;
+    private TextView tvProductSectionTitle;
+    private TextView tvViewAllProducts;
     private ImageView imgHomeAvatar;
+
     private RecyclerView rvProducts;
+    private RecyclerView rvCategories;
     private BottomNavigationView bottomNavigation;
 
     private ProductAdapter productAdapter;
-    private SessionManager sessionManager;
-    private RecyclerView rvCategories;
     private CategoryAdapter categoryAdapter;
+    private SessionManager sessionManager;
+
     private Long currentCategoryId = 0L;
     private String currentCategoryName = "Tất cả sản phẩm";
 
-    private static final int HOME_PRODUCT_LIMIT = 8;
+    private static final int HOME_PRODUCT_LIMIT = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,20 +75,23 @@ public class MainActivity extends AppCompatActivity {
 
         loadCategories();
         loadProducts();
+        loadCartCount();
     }
 
     private void initViews() {
         tvHello = findViewById(R.id.tvHello);
-        imgHomeAvatar = findViewById(R.id.imgHomeAvatar);
         btnCart = findViewById(R.id.btnCart);
+        txtCartBadge = findViewById(R.id.txtCartBadge);
+        imgHomeAvatar = findViewById(R.id.imgHomeAvatar);
+
         rvProducts = findViewById(R.id.rvProducts);
         rvCategories = findViewById(R.id.rvCategories);
+
         tvProductSectionTitle = findViewById(R.id.tvProductSectionTitle);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
         tvViewAllProducts = findViewById(R.id.tvViewAllProducts);
 
+        bottomNavigation = findViewById(R.id.bottomNavigation);
     }
-
 
     private void showUserName() {
         String fullName = sessionManager.getFullName();
@@ -107,6 +114,33 @@ public class MainActivity extends AppCompatActivity {
         rvProducts.setAdapter(productAdapter);
     }
 
+    private void setupCategoryList() {
+        categoryAdapter = new CategoryAdapter(category -> {
+            if (Long.valueOf(0L).equals(category.getId())) {
+                currentCategoryId = 0L;
+                currentCategoryName = "Tất cả sản phẩm";
+
+                tvProductSectionTitle.setText("Sản phẩm mới");
+                loadProducts();
+            } else {
+                currentCategoryId = category.getId();
+                currentCategoryName = category.getName();
+
+                tvProductSectionTitle.setText(category.getName());
+                loadProductsByCategory(category.getId());
+            }
+        });
+
+        LinearLayoutManager layoutManager = new LinearLayoutManager(
+                this,
+                LinearLayoutManager.HORIZONTAL,
+                false
+        );
+
+        rvCategories.setLayoutManager(layoutManager);
+        rvCategories.setAdapter(categoryAdapter);
+    }
+
     private void setupClickEvents() {
         tvViewAllProducts.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ProductListActivity.class);
@@ -114,19 +148,71 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("category_name", currentCategoryName);
             startActivity(intent);
         });
-        imgHomeAvatar.setOnClickListener(v -> openEditProfile());
+
+        btnCart.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CartActivity.class);
+            startActivity(intent);
+        });
+
+        if (imgHomeAvatar != null) {
+            imgHomeAvatar.setOnClickListener(v -> openEditProfile());
+        }
 
         tvHello.setOnClickListener(v -> openEditProfile());
     }
+
+    private void setupBottomNavigation() {
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                return true;
+            }
+
+            if (itemId == R.id.nav_orders) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Chức năng đơn hàng đang được phát triển",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return false;
+            }
+
+            if (itemId == R.id.nav_store) {
+                Intent intent = new Intent(
+                        MainActivity.this,
+                        StoreMapActivity.class
+                );
+
+                startActivity(intent);
+                return true;
+            }
+
+            if (itemId == R.id.nav_profile) {
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                startActivity(intent);
+                return true;
+            }
+
+            return false;
+        });
+    }
+
     private void openEditProfile() {
         Intent intent = new Intent(MainActivity.this, EditProfileActivity.class);
         startActivity(intent);
     }
+
     private void loadHomeUserAvatar() {
         Long userId = sessionManager.getUserId();
 
-        if (userId == null) {
-            imgHomeAvatar.setImageResource(android.R.drawable.ic_menu_myplaces);
+        if (imgHomeAvatar == null || userId == null) {
+            if (imgHomeAvatar != null) {
+                imgHomeAvatar.setImageResource(android.R.drawable.ic_menu_myplaces);
+            }
             return;
         }
 
@@ -187,55 +273,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        if (sessionManager != null) {
-            showUserName();
-            loadHomeUserAvatar();
+        showUserName();
+        loadHomeUserAvatar();
+        loadCartCount();
+
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.nav_home);
         }
     }
 
-    private void loadProducts() {
-        ApiClient.getApiService().getProducts().enqueue(new Callback<List<Product>>() {
-            @Override
-            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    showHomeProducts(response.body());
-                } else {
-                    Toast.makeText(MainActivity.this, "Không lấy được danh sách sản phẩm", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Lỗi API: " + t.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-    private void setupCategoryList() {
-        categoryAdapter = new CategoryAdapter(category -> {
-            if (category.getId() == 0L) {
-                currentCategoryId = 0L;
-                currentCategoryName = "Tất cả sản phẩm";
-
-                tvProductSectionTitle.setText("Sản phẩm mới");
-                loadProducts();
-            } else {
-                currentCategoryId = category.getId();
-                currentCategoryName = category.getName();
-
-                tvProductSectionTitle.setText(category.getName());
-                loadProductsByCategory(category.getId());
-            }
-        });
-
-        LinearLayoutManager layoutManager = new LinearLayoutManager(
-                this,
-                LinearLayoutManager.HORIZONTAL,
-                false
-        );
-
-        rvCategories.setLayoutManager(layoutManager);
-        rvCategories.setAdapter(categoryAdapter);
-    }
     private void loadCategories() {
         ApiClient.getApiService().getCategories().enqueue(new Callback<List<Category>>() {
             @Override
@@ -258,6 +304,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void loadProducts() {
+        ApiClient.getApiService().getProducts().enqueue(new Callback<List<Product>>() {
+            @Override
+            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    showHomeProducts(response.body());
+                } else {
+                    Toast.makeText(MainActivity.this, "Không lấy được danh sách sản phẩm", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Product>> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Lỗi API: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
     private void loadProductsByCategory(Long categoryId) {
         ApiClient.getApiService().getProductsByCategory(categoryId).enqueue(new Callback<List<Product>>() {
             @Override
@@ -275,6 +340,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     private void showHomeProducts(List<Product> products) {
         if (products == null || products.isEmpty()) {
             productAdapter.setData(new ArrayList<>());
@@ -294,33 +360,59 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupBottomNavigation() {
-        bottomNavigation.setSelectedItemId(R.id.nav_home);
+    private void loadCartCount() {
+        Long userId = sessionManager.getUserId();
 
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
+        if (txtCartBadge == null) {
+            return;
+        }
 
-            if (itemId == R.id.nav_home) {
-                return true;
+        if (userId == null) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        ApiClient.getApiService().getCartByUserId(userId).enqueue(new Callback<List<CartItem>>() {
+            @Override
+            public void onResponse(Call<List<CartItem>> call, Response<List<CartItem>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    int totalQuantity = 0;
+
+                    for (CartItem item : response.body()) {
+                        if (item.getQuantity() != null) {
+                            totalQuantity += item.getQuantity();
+                        }
+                    }
+
+                    showCartBadge(totalQuantity);
+                } else {
+                    txtCartBadge.setVisibility(View.GONE);
+                }
             }
 
-            if (itemId == R.id.nav_orders) {
-                Toast.makeText(this, "Chức năng đơn hàng đang phát triển", Toast.LENGTH_SHORT).show();
-                return true;
+            @Override
+            public void onFailure(Call<List<CartItem>> call, Throwable t) {
+                txtCartBadge.setVisibility(View.GONE);
             }
-
-            if (itemId == R.id.nav_store) {
-                Toast.makeText(this, "Chức năng cửa hàng đang phát triển", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-
-            if (itemId == R.id.nav_profile) {
-                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
-                startActivity(intent);
-                return true;
-            }
-
-            return false;
         });
+    }
+
+    private void showCartBadge(int totalQuantity) {
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (totalQuantity <= 0) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        txtCartBadge.setVisibility(View.VISIBLE);
+
+        if (totalQuantity > 99) {
+            txtCartBadge.setText("99+");
+        } else {
+            txtCartBadge.setText(String.valueOf(totalQuantity));
+        }
     }
 }
