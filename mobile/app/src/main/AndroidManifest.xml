@@ -18,6 +18,22 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
 
+
+        <activity
+            android:name=".activity.ProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.EditProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AddressActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AddEditAddressActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.ForgotPasswordActivity"
             android:exported="false" />

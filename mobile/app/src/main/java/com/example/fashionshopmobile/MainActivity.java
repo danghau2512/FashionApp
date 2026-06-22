@@ -3,6 +3,7 @@ package com.example.fashionshopmobile;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -11,16 +12,20 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.fashionshopmobile.activity.CartActivity;
+import com.example.fashionshopmobile.activity.EditProfileActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.activity.ProductListActivity;
-import com.example.fashionshopmobile.adapter.CategoryAdapter;
+import com.example.fashionshopmobile.activity.ProfileActivity;
 import com.example.fashionshopmobile.activity.StoreMapActivity;
+import com.example.fashionshopmobile.adapter.CategoryAdapter;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.Product;
+import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -38,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtCartBadge;
     private TextView tvProductSectionTitle;
     private TextView tvViewAllProducts;
+    private ImageView imgHomeAvatar;
 
     private RecyclerView rvProducts;
     private RecyclerView rvCategories;
@@ -61,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         showUserName();
+        loadHomeUserAvatar();
         setupProductList();
         setupCategoryList();
         setupClickEvents();
@@ -71,12 +78,11 @@ public class MainActivity extends AppCompatActivity {
         loadCartCount();
     }
 
-
-
     private void initViews() {
         tvHello = findViewById(R.id.tvHello);
         btnCart = findViewById(R.id.btnCart);
         txtCartBadge = findViewById(R.id.txtCartBadge);
+        imgHomeAvatar = findViewById(R.id.imgHomeAvatar);
 
         rvProducts = findViewById(R.id.rvProducts);
         rvCategories = findViewById(R.id.rvCategories);
@@ -106,64 +112,6 @@ public class MainActivity extends AppCompatActivity {
 
         rvProducts.setLayoutManager(new GridLayoutManager(this, 2));
         rvProducts.setAdapter(productAdapter);
-    }
-    private void setupBottomNavigation() {
-        // Đánh dấu tab Trang chủ đang được chọn
-        bottomNavigation.setSelectedItemId(R.id.nav_home);
-
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-
-            // Đang ở trang chủ nên không mở Activity mới
-            if (itemId == R.id.nav_home) {
-                return true;
-            }
-
-            // Chức năng đơn hàng chưa hoàn thành
-            if (itemId == R.id.nav_orders) {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Chức năng đơn hàng đang được phát triển",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                return false;
-            }
-
-            // Mở màn hình bản đồ cửa hàng
-            if (itemId == R.id.nav_store) {
-                Intent intent = new Intent(
-                        MainActivity.this,
-                        StoreMapActivity.class
-                );
-
-                startActivity(intent);
-                return true;
-            }
-
-            // Chức năng tài khoản do thành viên khác thực hiện
-            if (itemId == R.id.nav_profile) {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Chức năng tài khoản đang được phát triển",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                return false;
-            }
-
-            return false;
-        });
-    }
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        loadCartCount();
-
-        if (bottomNavigation != null) {
-            bottomNavigation.setSelectedItemId(R.id.nav_home);
-        }
     }
 
     private void setupCategoryList() {
@@ -205,6 +153,133 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, CartActivity.class);
             startActivity(intent);
         });
+
+        if (imgHomeAvatar != null) {
+            imgHomeAvatar.setOnClickListener(v -> openEditProfile());
+        }
+
+        tvHello.setOnClickListener(v -> openEditProfile());
+    }
+
+    private void setupBottomNavigation() {
+        bottomNavigation.setSelectedItemId(R.id.nav_home);
+
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                return true;
+            }
+
+            if (itemId == R.id.nav_orders) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Chức năng đơn hàng đang được phát triển",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return false;
+            }
+
+            if (itemId == R.id.nav_store) {
+                Intent intent = new Intent(
+                        MainActivity.this,
+                        StoreMapActivity.class
+                );
+
+                startActivity(intent);
+                return true;
+            }
+
+            if (itemId == R.id.nav_profile) {
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                startActivity(intent);
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    private void openEditProfile() {
+        Intent intent = new Intent(MainActivity.this, EditProfileActivity.class);
+        startActivity(intent);
+    }
+
+    private void loadHomeUserAvatar() {
+        Long userId = sessionManager.getUserId();
+
+        if (imgHomeAvatar == null || userId == null) {
+            if (imgHomeAvatar != null) {
+                imgHomeAvatar.setImageResource(android.R.drawable.ic_menu_myplaces);
+            }
+            return;
+        }
+
+        ApiClient.getApiService().getUserById(userId).enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    User user = response.body();
+
+                    sessionManager.saveUser(user);
+                    showUserName();
+
+                    String avatarUrl = user.getAvatarUrl();
+
+                    if (avatarUrl == null || avatarUrl.isEmpty()) {
+                        imgHomeAvatar.setImageResource(android.R.drawable.ic_menu_myplaces);
+                        return;
+                    }
+
+                    Glide.with(MainActivity.this)
+                            .load(buildImageUrl(avatarUrl))
+                            .placeholder(android.R.drawable.ic_menu_myplaces)
+                            .error(android.R.drawable.ic_menu_myplaces)
+                            .into(imgHomeAvatar);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                imgHomeAvatar.setImageResource(android.R.drawable.ic_menu_myplaces);
+            }
+        });
+    }
+
+    private String buildImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return "";
+        }
+
+        if (imageUrl.startsWith("http")) {
+            return imageUrl;
+        }
+
+        String baseUrl = ApiClient.getBaseUrl();
+
+        if (baseUrl.endsWith("/") && imageUrl.startsWith("/")) {
+            return baseUrl.substring(0, baseUrl.length() - 1) + imageUrl;
+        }
+
+        if (!baseUrl.endsWith("/") && !imageUrl.startsWith("/")) {
+            return baseUrl + "/" + imageUrl;
+        }
+
+        return baseUrl + imageUrl;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        showUserName();
+        loadHomeUserAvatar();
+        loadCartCount();
+
+        if (bottomNavigation != null) {
+            bottomNavigation.setSelectedItemId(R.id.nav_home);
+        }
     }
 
     private void loadCategories() {
