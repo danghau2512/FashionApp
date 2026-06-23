@@ -18,7 +18,9 @@ import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.OrderResponse;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
+import com.example.fashionshopmobile.request.ShippingQuoteRequest;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -45,6 +47,8 @@ public class CheckoutActivity extends AppCompatActivity {
     private TextView tvDiscount;
     private TextView tvCheckoutTotal;
     private TextView tvBottomTotal;
+    private TextView tvShippingMethod;
+    private TextView tvEstimatedDelivery;
 
     private EditText edtCheckoutNote;
     private RecyclerView rvCheckoutProducts;
@@ -63,9 +67,11 @@ public class CheckoutActivity extends AppCompatActivity {
     private boolean cartLoaded = false;
     private boolean addressLoaded = false;
     private boolean reloadAddressOnResume = false;
+    private boolean shippingLoading = false;
+    private boolean shippingAvailable = false;
 
     private BigDecimal productTotal = BigDecimal.ZERO;
-    private BigDecimal shippingFee = new BigDecimal("30000");
+    private BigDecimal shippingFee = BigDecimal.ZERO;
     private BigDecimal discountAmount = BigDecimal.ZERO;
     private BigDecimal totalAmount = BigDecimal.ZERO;
 
@@ -107,6 +113,8 @@ public class CheckoutActivity extends AppCompatActivity {
         tvCheckoutReceiver = findViewById(R.id.tvCheckoutReceiver);
         tvCheckoutAddress = findViewById(R.id.tvCheckoutAddress);
         tvChangeAddress = findViewById(R.id.tvChangeAddress);
+        tvShippingMethod = findViewById(R.id.tvShippingMethod);
+        tvEstimatedDelivery = findViewById(R.id.tvEstimatedDelivery);
         tvShippingFee = findViewById(R.id.tvShippingFee);
         tvProductTotal = findViewById(R.id.tvProductTotal);
         tvSummaryShippingFee = findViewById(R.id.tvSummaryShippingFee);
@@ -184,6 +192,7 @@ public class CheckoutActivity extends AppCompatActivity {
 
                 productAdapter.setData(selectedItems);
                 calculateSummary();
+                tryLoadShippingQuote();
                 updateLoadingState();
             }
 
@@ -227,6 +236,7 @@ public class CheckoutActivity extends AppCompatActivity {
                     showNoAddress();
                 } else {
                     showSelectedAddress();
+                    tryLoadShippingQuote();
                 }
 
                 updateLoadingState();
@@ -284,6 +294,120 @@ public class CheckoutActivity extends AppCompatActivity {
 
         return false;
     }
+    private void tryLoadShippingQuote() {
+        if (!cartLoaded || !addressLoaded) {
+            return;
+        }
+
+        if (selectedItems.isEmpty() || selectedAddress == null) {
+            return;
+        }
+
+        if (selectedAddress.getDistrictId() == null
+                || selectedAddress.getWardCode() == null
+                || selectedAddress.getWardCode().trim().isEmpty()) {
+            shippingAvailable = false;
+            tvEstimatedDelivery.setText("Địa chỉ chưa có mã GHN");
+            tvShippingFee.setText("Không thể tính phí");
+            updateLoadingState();
+            return;
+        }
+
+        loadShippingQuote();
+    }
+
+    private void loadShippingQuote() {
+        Long userId = sessionManager.getUserId();
+
+        if (userId == null) {
+            return;
+        }
+
+        shippingLoading = true;
+        shippingAvailable = false;
+
+        tvShippingFee.setText("Đang tính...");
+        tvSummaryShippingFee.setText("Phí vận chuyển: Đang tính...");
+        tvEstimatedDelivery.setText("Đang tính thời gian giao...");
+        updateLoadingState();
+
+        ShippingQuoteRequest request = new ShippingQuoteRequest(
+                userId,
+                getSelectedCartItemIds(),
+                selectedAddress.getDistrictId(),
+                selectedAddress.getWardCode()
+        );
+
+        ApiClient.getApiService().getShippingQuote(request)
+                .enqueue(new Callback<ShippingQuote>() {
+                    @Override
+                    public void onResponse(Call<ShippingQuote> call,
+                                           Response<ShippingQuote> response) {
+                        shippingLoading = false;
+
+                        if (!response.isSuccessful()
+                                || response.body() == null
+                                || response.body().getShippingFee() == null) {
+                            showShippingError();
+                            return;
+                        }
+
+                        ShippingQuote quote = response.body();
+
+                        shippingFee = quote.getShippingFee();
+                        shippingAvailable = true;
+
+                        if (quote.getServiceName() != null
+                                && !quote.getServiceName().trim().isEmpty()) {
+                            tvShippingMethod.setText(
+                                    "Giao hàng " + quote.getServiceName()
+                            );
+                        }
+
+                        tvEstimatedDelivery.setText(
+                                "Dự kiến giao: " + quote.getEstimatedDelivery()
+                        );
+
+                        calculateSummary();
+                        updateLoadingState();
+                    }
+
+                    @Override
+                    public void onFailure(Call<ShippingQuote> call, Throwable t) {
+                        shippingLoading = false;
+                        showShippingError();
+                    }
+                });
+    }
+
+    private void showShippingError() {
+        shippingFee = BigDecimal.ZERO;
+        shippingAvailable = false;
+
+        tvShippingFee.setText("Không thể tính phí");
+        tvSummaryShippingFee.setText("Phí vận chuyển: Chưa xác định");
+        tvEstimatedDelivery.setText(
+                "Không lấy được thời gian giao dự kiến"
+        );
+
+        updateLoadingState();
+
+        Toast.makeText(
+                CheckoutActivity.this,
+                "Không thể tính phí vận chuyển GHN",
+                Toast.LENGTH_SHORT
+        ).show();
+    }
+
+    private List<Long> getSelectedCartItemIds() {
+        List<Long> cartItemIds = new ArrayList<>();
+
+        for (long id : selectedCartItemIds) {
+            cartItemIds.add(id);
+        }
+
+        return cartItemIds;
+    }
 
     private void calculateSummary() {
         productTotal = BigDecimal.ZERO;
@@ -311,14 +435,14 @@ public class CheckoutActivity extends AppCompatActivity {
     }
 
     private void updateLoadingState() {
-        boolean loading = !cartLoaded || !addressLoaded;
+        boolean loading = !cartLoaded || !addressLoaded || shippingLoading;
 
         progressCheckout.setVisibility(loading ? View.VISIBLE : View.GONE);
 
-        btnPlaceOrder.setEnabled(
-                !loading
+        btnPlaceOrder.setEnabled(!loading
                         && !selectedItems.isEmpty()
                         && selectedAddress != null
+                        && shippingAvailable
         );
     }
 
@@ -334,12 +458,12 @@ public class CheckoutActivity extends AppCompatActivity {
             Toast.makeText(this, "Vui lòng chọn địa chỉ nhận hàng", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        List<Long> cartItemIds = new ArrayList<>();
-
-        for (long id : selectedCartItemIds) {
-            cartItemIds.add(id);
+        if (!shippingAvailable) {
+            Toast.makeText(this, "Chưa tính được phí vận chuyển", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        List<Long> cartItemIds = getSelectedCartItemIds();
 
         CreateOrderRequest request = new CreateOrderRequest(
                 userId,
@@ -349,6 +473,8 @@ public class CheckoutActivity extends AppCompatActivity {
                 selectedAddress.getFullAddress(),
                 selectedAddress.getLatitude(),
                 selectedAddress.getLongitude(),
+                selectedAddress.getDistrictId(),
+                selectedAddress.getWardCode(),
                 shippingFee,
                 "COD",
                 edtCheckoutNote.getText().toString().trim()
