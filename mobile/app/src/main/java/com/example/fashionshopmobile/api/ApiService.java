@@ -1,6 +1,7 @@
 package com.example.fashionshopmobile.api;
 
 import com.example.fashionshopmobile.model.AdminDashboard;
+import com.example.fashionshopmobile.model.AdminStatistics;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.OrderResponse;
@@ -120,4 +121,11 @@ public interface ApiService {
     Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
+    @GET("api/admin/statistics")
+    Call<AdminStatistics> getAdminStatistics(
+            @Query("adminId") Long adminId,
+            @Query("year") Integer year,
+            @Query("bestSellerMonths") Integer bestSellerMonths,
+            @Query("noSaleMonths") Integer noSaleMonths
+    );
 }

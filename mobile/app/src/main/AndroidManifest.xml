@@ -74,7 +74,9 @@
         <activity
             android:name=".activity.OrderSuccessActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".activity.AdminStatisticsActivity"
+            android:exported="false" />
         <activity
             android:name=".activity.AdminDashboardActivity"
             android:exported="false" />
