@@ -1,31 +1,34 @@
-package com.example.fashionshopmobile.activity;
+package com.example.fashionshopmobile.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.example.fashionshopmobile.MainActivity;
 import com.example.fashionshopmobile.R;
+import com.example.fashionshopmobile.activity.AddressActivity;
+import com.example.fashionshopmobile.activity.EditProfileActivity;
+import com.example.fashionshopmobile.activity.LoginActivity;
+import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.OrderSummary;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.utils.SessionManager;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-
-import androidx.appcompat.app.AlertDialog;
-
 import com.google.firebase.auth.FirebaseAuth;
-
-import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,14 +37,13 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class ProfileActivity extends AppCompatActivity {
+public class ProfileFragment extends Fragment {
 
     private ImageView imgAvatar;
     private TextView tvFullName, tvEmail, btnCart;
     private TextView tvPendingCount, tvPackingCount, tvShippingCount, tvReviewCount;
     private TextView tvViewOrders;
     private RecyclerView rvSuggestedProducts;
-    private BottomNavigationView bottomNavigation;
 
     private SessionManager sessionManager;
     private ProductAdapter productAdapter;
@@ -49,51 +51,55 @@ public class ProfileActivity extends AppCompatActivity {
     private Long userId;
 
     private static final int SUGGEST_LIMIT = 6;
+
     private TextView layoutAddress, layoutResetPassword, btnLogout;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_profile);
+    public View onCreateView(
+            @NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState
+    ) {
+        View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
-        sessionManager = new SessionManager(this);
+        sessionManager = new SessionManager(requireContext());
         userId = sessionManager.getUserId();
 
         if (userId == null) {
             goToLogin();
-            return;
+            return view;
         }
 
-        initViews();
+        initViews(view);
         setupSuggestedProducts();
         setupClickEvents();
-        setupBottomNavigation();
 
         showSessionUser();
         loadUserProfile();
         loadOrderStatus();
         loadSuggestedProducts();
+
+        return view;
     }
 
-    private void initViews() {
-        imgAvatar = findViewById(R.id.imgAvatar);
-        tvFullName = findViewById(R.id.tvFullName);
-        tvEmail = findViewById(R.id.tvEmail);
-        btnCart = findViewById(R.id.btnCart);
+    private void initViews(View view) {
+        imgAvatar = view.findViewById(R.id.imgAvatar);
+        tvFullName = view.findViewById(R.id.tvFullName);
+        tvEmail = view.findViewById(R.id.tvEmail);
+        btnCart = view.findViewById(R.id.btnCart);
 
-        tvPendingCount = findViewById(R.id.tvPendingCount);
-        tvPackingCount = findViewById(R.id.tvPackingCount);
-        tvShippingCount = findViewById(R.id.tvShippingCount);
-        tvReviewCount = findViewById(R.id.tvReviewCount);
+        tvPendingCount = view.findViewById(R.id.tvPendingCount);
+        tvPackingCount = view.findViewById(R.id.tvPackingCount);
+        tvShippingCount = view.findViewById(R.id.tvShippingCount);
+        tvReviewCount = view.findViewById(R.id.tvReviewCount);
 
-        tvViewOrders = findViewById(R.id.tvViewOrders);
-        rvSuggestedProducts = findViewById(R.id.rvSuggestedProducts);
-        bottomNavigation = findViewById(R.id.bottomNavigation);
+        tvViewOrders = view.findViewById(R.id.tvViewOrders);
+        rvSuggestedProducts = view.findViewById(R.id.rvSuggestedProducts);
 
-
-        layoutAddress = findViewById(R.id.layoutAddress);
-        layoutResetPassword = findViewById(R.id.layoutResetPassword);
-        btnLogout = findViewById(R.id.btnLogout);
+        layoutAddress = view.findViewById(R.id.layoutAddress);
+        layoutResetPassword = view.findViewById(R.id.layoutResetPassword);
+        btnLogout = view.findViewById(R.id.btnLogout);
     }
 
     private void showSessionUser() {
@@ -117,6 +123,10 @@ public class ProfileActivity extends AppCompatActivity {
         ApiClient.getApiService().getUserById(userId).enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
                 if (response.isSuccessful() && response.body() != null) {
                     User user = response.body();
 
@@ -126,13 +136,17 @@ public class ProfileActivity extends AppCompatActivity {
                     sessionManager.saveUser(user);
                     loadAvatar(user.getAvatarUrl());
                 } else {
-                    Toast.makeText(ProfileActivity.this, "Không lấy được thông tin tài khoản", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Không lấy được thông tin tài khoản", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<User> call, Throwable t) {
-                Toast.makeText(ProfileActivity.this, "Lỗi tài khoản: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                if (!isAdded()) {
+                    return;
+                }
+
+                Toast.makeText(requireContext(), "Lỗi tài khoản: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -155,7 +169,7 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        Glide.with(this)
+        Glide.with(ProfileFragment.this)
                 .load(buildImageUrl(avatarUrl))
                 .placeholder(android.R.drawable.ic_menu_myplaces)
                 .error(android.R.drawable.ic_menu_myplaces)
@@ -163,31 +177,49 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private String buildImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return "";
+        }
+
         if (imageUrl.startsWith("http")) {
             return imageUrl;
         }
 
-        if (imageUrl.startsWith("/")) {
-            return "http://192.168.1.101:8080" + imageUrl;
+        String baseUrl = ApiClient.getBaseUrl();
+
+        if (baseUrl.endsWith("/") && imageUrl.startsWith("/")) {
+            return baseUrl.substring(0, baseUrl.length() - 1) + imageUrl;
         }
 
-        return "http://192.168.1.101:8080/" + imageUrl;
+        if (!baseUrl.endsWith("/") && !imageUrl.startsWith("/")) {
+            return baseUrl + "/" + imageUrl;
+        }
+
+        return baseUrl + imageUrl;
     }
 
     private void loadOrderStatus() {
         ApiClient.getApiService().getOrdersByUserId(userId).enqueue(new Callback<List<OrderSummary>>() {
             @Override
             public void onResponse(Call<List<OrderSummary>> call, Response<List<OrderSummary>> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
                 if (response.isSuccessful() && response.body() != null) {
                     showOrderCount(response.body());
                 } else {
-                    Toast.makeText(ProfileActivity.this, "Không lấy được đơn mua", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Không lấy được đơn mua", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<List<OrderSummary>> call, Throwable t) {
-                Toast.makeText(ProfileActivity.this, "Lỗi đơn mua: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                if (!isAdded()) {
+                    return;
+                }
+
+                Toast.makeText(requireContext(), "Lỗi đơn mua: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -224,12 +256,12 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void setupSuggestedProducts() {
         productAdapter = new ProductAdapter(product -> {
-            Intent intent = new Intent(ProfileActivity.this, ProductDetailActivity.class);
+            Intent intent = new Intent(requireContext(), ProductDetailActivity.class);
             intent.putExtra("product_id", product.getId());
             startActivity(intent);
         });
 
-        rvSuggestedProducts.setLayoutManager(new GridLayoutManager(this, 2));
+        rvSuggestedProducts.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         rvSuggestedProducts.setAdapter(productAdapter);
     }
 
@@ -237,6 +269,10 @@ public class ProfileActivity extends AppCompatActivity {
         ApiClient.getApiService().getProducts().enqueue(new Callback<List<Product>>() {
             @Override
             public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
                 if (response.isSuccessful() && response.body() != null) {
                     List<Product> products = response.body();
 
@@ -250,31 +286,35 @@ public class ProfileActivity extends AppCompatActivity {
 
                     productAdapter.setData(suggestedProducts);
                 } else {
-                    Toast.makeText(ProfileActivity.this, "Không lấy được gợi ý sản phẩm", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Không lấy được gợi ý sản phẩm", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<List<Product>> call, Throwable t) {
-                Toast.makeText(ProfileActivity.this, "Lỗi gợi ý: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                if (!isAdded()) {
+                    return;
+                }
+
+                Toast.makeText(requireContext(), "Lỗi gợi ý: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
 
     private void setupClickEvents() {
         btnCart.setOnClickListener(v -> {
-            Toast.makeText(this, "Chức năng giỏ hàng đang phát triển", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Chức năng giỏ hàng đang phát triển", Toast.LENGTH_SHORT).show();
         });
 
         tvViewOrders.setOnClickListener(v -> {
-            Toast.makeText(this, "Chức năng lịch sử đơn hàng đang phát triển", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Chức năng lịch sử đơn hàng đang phát triển", Toast.LENGTH_SHORT).show();
         });
-        imgAvatar.setOnClickListener(v -> openEditProfile());
 
+        imgAvatar.setOnClickListener(v -> openEditProfile());
         tvFullName.setOnClickListener(v -> openEditProfile());
 
         layoutAddress.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, AddressActivity.class);
+            Intent intent = new Intent(requireContext(), AddressActivity.class);
             startActivity(intent);
         });
 
@@ -282,58 +322,29 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnLogout.setOnClickListener(v -> showLogoutDialog());
     }
+
     private void openEditProfile() {
-        Intent intent = new Intent(ProfileActivity.this, EditProfileActivity.class);
+        Intent intent = new Intent(requireContext(), EditProfileActivity.class);
         startActivity(intent);
-    }
-
-    private void setupBottomNavigation() {
-        bottomNavigation.setSelectedItemId(R.id.nav_profile);
-
-        bottomNavigation.setOnItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-
-            if (itemId == R.id.nav_home) {
-                Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                return true;
-            }
-
-            if (itemId == R.id.nav_orders) {
-                Toast.makeText(this, "Chức năng đơn hàng đang phát triển", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-
-            if (itemId == R.id.nav_store) {
-                Toast.makeText(this, "Chức năng cửa hàng đang phát triển", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-
-            if (itemId == R.id.nav_profile) {
-                return true;
-            }
-
-            return false;
-        });
     }
 
     private void goToLogin() {
-        Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+        Intent intent = new Intent(requireContext(), LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
-        finish();
+
+        requireActivity().finish();
     }
 
     private void sendResetPasswordEmail() {
         String email = sessionManager.getEmail();
 
         if (email == null || email.isEmpty()) {
-            Toast.makeText(this, "Không tìm thấy email tài khoản", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Không tìm thấy email tài khoản", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(requireContext())
                 .setTitle("Đặt lại mật khẩu")
                 .setMessage("Hệ thống sẽ gửi email đặt lại mật khẩu đến:\n" + email)
                 .setNegativeButton("Hủy", null)
@@ -341,10 +352,14 @@ public class ProfileActivity extends AppCompatActivity {
                     FirebaseAuth.getInstance()
                             .sendPasswordResetEmail(email)
                             .addOnCompleteListener(task -> {
+                                if (!isAdded()) {
+                                    return;
+                                }
+
                                 if (task.isSuccessful()) {
-                                    Toast.makeText(this, "Đã gửi email đặt lại mật khẩu", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(requireContext(), "Đã gửi email đặt lại mật khẩu", Toast.LENGTH_LONG).show();
                                 } else {
-                                    Toast.makeText(this, "Gửi email thất bại", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(requireContext(), "Gửi email thất bại", Toast.LENGTH_SHORT).show();
                                 }
                             });
                 })
@@ -352,7 +367,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showLogoutDialog() {
-        new AlertDialog.Builder(this)
+        new AlertDialog.Builder(requireContext())
                 .setTitle("Đăng xuất")
                 .setMessage("Bạn có chắc muốn đăng xuất?")
                 .setNegativeButton("Hủy", null)
@@ -360,23 +375,24 @@ public class ProfileActivity extends AppCompatActivity {
                     FirebaseAuth.getInstance().signOut();
                     sessionManager.logout();
 
-                    Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+                    Intent intent = new Intent(requireContext(), LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
-                    finish();
+
+                    requireActivity().finish();
                 })
                 .show();
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
 
         if (sessionManager != null && sessionManager.getUserId() != null) {
             showSessionUser();
             loadUserProfile();
+            loadOrderStatus();
+            loadSuggestedProducts();
         }
     }
-
-
 }
