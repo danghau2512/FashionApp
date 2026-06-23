@@ -43,23 +43,34 @@ public class LoginActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
 
         initViews();
+        setupClickEvents();
 
-        // Quan trọng:
-        // Nếu Firebase vẫn còn user đang đăng nhập,
-        // gọi lại backend để lấy role mới nhất trong DB.
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
 
-        if (sessionManager.isLoggedIn() && currentUser != null) {
+        /*
+         * Nếu Firebase vẫn còn user đang đăng nhập,
+         * gọi lại backend để lấy role mới nhất trong DB.
+         * Cách này giúp khi bạn sửa role trong DB từ CUSTOMER sang ADMIN,
+         * app sẽ cập nhật lại role và chuyển đúng trang.
+         */
+        if (currentUser != null) {
             showLoading(true);
             syncUserToBackend(currentUser);
-            return;
-        }
-
-        // Nếu session còn nhưng Firebase không còn user thì xóa session cũ.
-        if (sessionManager.isLoggedIn() && currentUser == null) {
+        } else {
             sessionManager.logout();
         }
+    }
 
+    private void initViews() {
+        edtEmail = findViewById(R.id.edtEmail);
+        edtPassword = findViewById(R.id.edtPassword);
+        btnLogin = findViewById(R.id.btnLogin);
+        tvRegister = findViewById(R.id.tvRegister);
+        tvForgotPassword = findViewById(R.id.tvForgotPassword);
+        progressBar = findViewById(R.id.progressBar);
+    }
+
+    private void setupClickEvents() {
         btnLogin.setOnClickListener(v -> loginUser());
 
         tvRegister.setOnClickListener(v -> {
@@ -71,15 +82,6 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
             startActivity(intent);
         });
-    }
-
-    private void initViews() {
-        edtEmail = findViewById(R.id.edtEmail);
-        edtPassword = findViewById(R.id.edtPassword);
-        btnLogin = findViewById(R.id.btnLogin);
-        tvRegister = findViewById(R.id.tvRegister);
-        tvForgotPassword = findViewById(R.id.tvForgotPassword);
-        progressBar = findViewById(R.id.progressBar);
     }
 
     private void loginUser() {
@@ -107,13 +109,23 @@ public class LoginActivity extends AppCompatActivity {
                             syncUserToBackend(firebaseUser);
                         } else {
                             showLoading(false);
-                            Toast.makeText(this, "Không lấy được thông tin Firebase user", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(
+                                    LoginActivity.this,
+                                    "Không lấy được thông tin Firebase user",
+                                    Toast.LENGTH_SHORT
+                            ).show();
                         }
                     } else {
                         showLoading(false);
+
+                        String errorMessage = "Đăng nhập thất bại";
+                        if (task.getException() != null) {
+                            errorMessage += ": " + task.getException().getMessage();
+                        }
+
                         Toast.makeText(
-                                this,
-                                "Đăng nhập thất bại: " + task.getException().getMessage(),
+                                LoginActivity.this,
+                                errorMessage,
                                 Toast.LENGTH_LONG
                         ).show();
                     }
@@ -125,7 +137,7 @@ public class LoginActivity extends AppCompatActivity {
         String email = firebaseUser.getEmail();
 
         String fullName = firebaseUser.getDisplayName();
-        if (fullName == null || fullName.isEmpty()) {
+        if (fullName == null || fullName.trim().isEmpty()) {
             fullName = getNameFromEmail(email);
         }
 
@@ -146,6 +158,10 @@ public class LoginActivity extends AppCompatActivity {
 
                     sessionManager.saveUser(user);
 
+                    /*
+                     * Dòng này chỉ để test.
+                     * Khi chạy ổn rồi bạn có thể xóa Toast này.
+                     */
                     Toast.makeText(
                             LoginActivity.this,
                             "Role backend = " + user.getRole()
@@ -153,7 +169,7 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.LENGTH_LONG
                     ).show();
 
-                    openHomeByRole();
+                    openHomeByRole(user.getRole());
                 } else {
                     firebaseAuth.signOut();
                     sessionManager.logout();
@@ -169,6 +185,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<User> call, Throwable t) {
                 showLoading(false);
+
                 firebaseAuth.signOut();
                 sessionManager.logout();
 
@@ -194,15 +211,16 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setEnabled(!isLoading);
     }
 
-    private void openHomeByRole() {
+    private void openHomeByRole(String role) {
         Intent intent;
 
-        if (sessionManager.isAdmin()) {
+        if (role != null && role.trim().equalsIgnoreCase("ADMIN")) {
             intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
         } else {
             intent = new Intent(LoginActivity.this, MainActivity.class);
         }
 
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
     }
