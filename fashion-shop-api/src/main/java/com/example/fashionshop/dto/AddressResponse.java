@@ -9,15 +9,22 @@ public class AddressResponse {
     private String receiverName;
     private String receiverPhone;
     private String addressDetail;
+
     private String ward;
     private String district;
     private String province;
+
+    private Integer provinceId;
+    private Integer districtId;
+    private String wardCode;
+
     private BigDecimal latitude;
     private BigDecimal longitude;
     private Boolean defaultAddress;
 
     public AddressResponse(Long id, Long userId, String receiverName, String receiverPhone,
                            String addressDetail, String ward, String district, String province,
+                           Integer provinceId, Integer districtId, String wardCode,
                            BigDecimal latitude, BigDecimal longitude, Boolean defaultAddress) {
         this.id = id;
         this.userId = userId;
@@ -27,6 +34,9 @@ public class AddressResponse {
         this.ward = ward;
         this.district = district;
         this.province = province;
+        this.provinceId = provinceId;
+        this.districtId = districtId;
+        this.wardCode = wardCode;
         this.latitude = latitude;
         this.longitude = longitude;
         this.defaultAddress = defaultAddress;
@@ -62,6 +72,18 @@ public class AddressResponse {
 
     public String getProvince() {
         return province;
+    }
+
+    public Integer getProvinceId() {
+        return provinceId;
+    }
+
+    public Integer getDistrictId() {
+        return districtId;
+    }
+
+    public String getWardCode() {
+        return wardCode;
     }
 
     public BigDecimal getLatitude() {

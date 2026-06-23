@@ -44,26 +44,58 @@
             android:hint="Số điện thoại"
             android:inputType="phone" />
 
-        <EditText
-            android:id="@+id/edtProvince"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilProvince"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="14dp"
-            android:hint="Tỉnh/Thành phố" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Tỉnh/Thành phố">
 
-        <EditText
-            android:id="@+id/edtDistrict"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="14dp"
-            android:hint="Quận/Huyện" />
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/actProvince"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:cursorVisible="false" />
 
-        <EditText
-            android:id="@+id/edtWard"
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilDistrict"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="14dp"
-            android:hint="Phường/Xã" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Quận/Huyện">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/actDistrict"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:inputType="none"
+                android:cursorVisible="false" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilWard"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Phường/Xã">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/actWard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:inputType="none"
+                android:cursorVisible="false" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <EditText
             android:id="@+id/edtAddressDetail"

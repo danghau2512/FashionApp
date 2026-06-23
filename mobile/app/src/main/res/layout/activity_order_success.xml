@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6F6F6"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:background="#E8F8EF"
+        android:gravity="center"
+        android:text="✓"
+        android:textColor="#20A464"
+        android:textSize="52sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Đặt hàng thành công"
+        android:textColor="#222222"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="Đơn hàng của bạn đã được tiếp nhận và đang chờ xử lý."
+        android:textColor="#777777"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/tvOrderCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Mã đơn hàng: DH1"
+        android:textColor="#444444"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvSuccessTotal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Tổng thanh toán: 0đ"
+        android:textColor="#EE4D2D"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContinueShopping"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="32dp"
+        android:text="Tiếp tục mua sắm"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        app:backgroundTint="#EE4D2D"
+        app:cornerRadius="12dp" />
+
+</LinearLayout>

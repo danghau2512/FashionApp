@@ -59,6 +59,16 @@
             android:name=".activity.StoreMapActivity"
             android:exported="false" />
         <activity
+            android:name=".activity.AddressMapConfirmActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.CheckoutActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.OrderSuccessActivity"
+            android:exported="false" />
+
             android:name=".activity.AdminDashboardActivity"
             android:exported="false" />
         <activity

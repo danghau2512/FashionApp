@@ -19,9 +19,23 @@ public class AddressRequest {
     @NotBlank(message = "Địa chỉ chi tiết không được để trống")
     private String addressDetail;
 
+    @NotBlank(message = "Phường/xã không được để trống")
     private String ward;
+
+    @NotBlank(message = "Quận/huyện không được để trống")
     private String district;
+
+    @NotBlank(message = "Tỉnh/thành phố không được để trống")
     private String province;
+
+    @NotNull(message = "Mã tỉnh/thành phố không được để trống")
+    private Integer provinceId;
+
+    @NotNull(message = "Mã quận/huyện không được để trống")
+    private Integer districtId;
+
+    @NotBlank(message = "Mã phường/xã không được để trống")
+    private String wardCode;
 
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -54,6 +68,18 @@ public class AddressRequest {
 
     public String getProvince() {
         return province;
+    }
+
+    public Integer getProvinceId() {
+        return provinceId;
+    }
+
+    public Integer getDistrictId() {
+        return districtId;
+    }
+
+    public String getWardCode() {
+        return wardCode;
     }
 
     public BigDecimal getLatitude() {

@@ -262,15 +262,22 @@ public class CartActivity extends AppCompatActivity {
             return;
         }
 
-        int selectedQuantity = cartAdapter.getSelectedQuantity();
-        BigDecimal selectedTotal = cartAdapter.getSelectedTotal();
+        long[] cartItemIds = new long[selectedItems.size()];
 
-        Toast.makeText(
-                this,
-                "Đã chọn " + selectedQuantity + " sản phẩm, tổng tiền " + formatPrice(selectedTotal)
-                        + ". Màn thanh toán sẽ làm ở bước sau.",
-                Toast.LENGTH_LONG
-        ).show();
+        for (int i = 0; i < selectedItems.size(); i++) {
+            CartItem item = selectedItems.get(i);
+
+            if (item.getId() == null) {
+                Toast.makeText(this, "Dữ liệu giỏ hàng không hợp lệ", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            cartItemIds[i] = item.getId();
+        }
+
+        Intent intent = new Intent(CartActivity.this, CheckoutActivity.class);
+        intent.putExtra("cart_item_ids", cartItemIds);
+        startActivity(intent);
     }
 
     private int getQuantity(CartItem cartItem) {

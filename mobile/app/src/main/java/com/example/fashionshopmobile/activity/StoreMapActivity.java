@@ -216,14 +216,20 @@ public class StoreMapActivity extends AppCompatActivity implements OnMapReadyCal
         double latitude = selectedStore.getLatitude();
         double longitude = selectedStore.getLongitude();
 
-        Uri navigationUri = Uri.parse("google.navigation:q=" + latitude + "," + longitude + "&mode=d");
-        Intent mapIntent = new Intent(Intent.ACTION_VIEW, navigationUri);
+        Uri directionUri = Uri.parse(
+                "https://www.google.com/maps/dir/?api=1"
+                        + "&destination=" + latitude + "," + longitude
+                        + "&travelmode=driving"
+        );
+
+        Intent mapIntent = new Intent(Intent.ACTION_VIEW, directionUri);
         mapIntent.setPackage("com.google.android.apps.maps");
 
         try {
             startActivity(mapIntent);
         } catch (ActivityNotFoundException exception) {
-            openDirectionsInBrowser(latitude, longitude);
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, directionUri);
+            startActivity(browserIntent);
         }
     }
 

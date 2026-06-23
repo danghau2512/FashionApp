@@ -78,9 +78,7 @@ public class OrderService {
             totalProductPrice = totalProductPrice.add(subtotal);
         }
 
-        BigDecimal shippingFee = request.getShippingFee() != null
-                ? request.getShippingFee()
-                : BigDecimal.ZERO;
+        BigDecimal shippingFee = new BigDecimal("30000");
 
         BigDecimal discountAmount = BigDecimal.ZERO;
 
