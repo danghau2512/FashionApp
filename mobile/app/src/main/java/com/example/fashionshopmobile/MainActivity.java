@@ -2,11 +2,11 @@ package com.example.fashionshopmobile;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.example.fashionshopmobile.activity.OrderHistoryActivity;
 import com.example.fashionshopmobile.activity.StoreMapActivity;
 import com.example.fashionshopmobile.fragment.HomeFragment;
 import com.example.fashionshopmobile.fragment.ProfileFragment;
@@ -52,12 +52,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (itemId == R.id.nav_orders) {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Chức năng đơn hàng đang được phát triển",
-                        Toast.LENGTH_SHORT
-                ).show();
-
+                Intent intent = new Intent(MainActivity.this, OrderHistoryActivity.class);
+                startActivity(intent);
                 return false;
             }
 

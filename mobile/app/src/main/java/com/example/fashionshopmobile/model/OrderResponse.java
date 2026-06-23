@@ -24,6 +24,7 @@ public class OrderResponse {
     private String createdAt;
 
     private List<OrderItemResponse> items;
+    private String productImageUrl;
 
     public Long getId() {
         return id;
@@ -47,5 +48,13 @@ public class OrderResponse {
 
     public List<OrderItemResponse> getItems() {
         return items;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public String getProductImageUrl() {
+        return productImageUrl;
     }
 }

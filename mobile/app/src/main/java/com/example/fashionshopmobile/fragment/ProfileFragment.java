@@ -21,6 +21,7 @@ import com.example.fashionshopmobile.R;
 import com.example.fashionshopmobile.activity.AddressActivity;
 import com.example.fashionshopmobile.activity.EditProfileActivity;
 import com.example.fashionshopmobile.activity.LoginActivity;
+import com.example.fashionshopmobile.activity.OrderHistoryActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
@@ -306,9 +307,7 @@ public class ProfileFragment extends Fragment {
             Toast.makeText(requireContext(), "Chức năng giỏ hàng đang phát triển", Toast.LENGTH_SHORT).show();
         });
 
-        tvViewOrders.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Chức năng lịch sử đơn hàng đang phát triển", Toast.LENGTH_SHORT).show();
-        });
+        tvViewOrders.setOnClickListener(v -> openOrderHistory());
 
         imgAvatar.setOnClickListener(v -> openEditProfile());
         tvFullName.setOnClickListener(v -> openEditProfile());
@@ -323,6 +322,10 @@ public class ProfileFragment extends Fragment {
         btnLogout.setOnClickListener(v -> showLogoutDialog());
     }
 
+    private void openOrderHistory() {
+        Intent intent = new Intent(requireContext(), OrderHistoryActivity.class);
+        startActivity(intent);
+    }
     private void openEditProfile() {
         Intent intent = new Intent(requireContext(), EditProfileActivity.class);
         startActivity(intent);

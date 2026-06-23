@@ -13,6 +13,7 @@ public class OrderSummaryResponse {
     private String paymentStatus;
     private String orderStatus;
     private LocalDateTime createdAt;
+    private String productImageUrl;
 
     public OrderSummaryResponse(Long id, Long userId, String receiverName,
                                 BigDecimal totalAmount, String paymentMethod,
@@ -58,5 +59,13 @@ public class OrderSummaryResponse {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getProductImageUrl() {
+        return productImageUrl;
+    }
+
+    public void setProductImageUrl(String productImageUrl) {
+        this.productImageUrl = productImageUrl;
     }
 }
