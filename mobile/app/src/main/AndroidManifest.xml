@@ -73,6 +73,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".activity.OrderDetailActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activity.OrderHistoryActivity"
             android:exported="false" />
 

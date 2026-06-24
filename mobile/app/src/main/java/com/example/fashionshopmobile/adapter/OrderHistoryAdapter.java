@@ -1,5 +1,6 @@
 package com.example.fashionshopmobile.adapter;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fashionshopmobile.R;
+import com.example.fashionshopmobile.activity.OrderDetailActivity;
 import com.example.fashionshopmobile.model.OrderSummary;
 
 import java.math.BigDecimal;
@@ -61,6 +63,11 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 .placeholder(R.mipmap.ic_launcher)
                 .error(R.mipmap.ic_launcher)
                 .into(holder.imgOrderProduct);
+        holder.imgOrderProduct.setOnClickListener(v -> {
+            Intent intent = new Intent(holder.itemView.getContext(), OrderDetailActivity.class);
+            intent.putExtra("order_id", order.getId());
+            holder.itemView.getContext().startActivity(intent);
+        });
     }
 
     @Override

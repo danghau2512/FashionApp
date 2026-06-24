@@ -56,6 +56,11 @@ public interface ApiService {
     @GET("api/orders/user/{userId}")
     Call<List<OrderSummary>> getOrdersByUserId(@Path("userId") Long userId);
 
+    @GET("api/orders/{orderId}")
+    Call<OrderResponse> getOrderById(@Path("orderId") Long orderId);
+
+    @PUT("api/orders/{orderId}/cancel")
+    Call<OrderResponse> cancelOrder(@Path("orderId") Long orderId);
     @PUT("api/users/{id}")
     Call<User> updateUser(
             @Path("id") Long id,

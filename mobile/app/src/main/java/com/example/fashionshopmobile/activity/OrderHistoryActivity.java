@@ -47,7 +47,6 @@ public class OrderHistoryActivity extends AppCompatActivity {
         initViews();
         setupRecyclerView();
         setupClickEvents();
-        loadOrderHistory();
     }
 
     private void initViews() {
@@ -96,6 +95,15 @@ public class OrderHistoryActivity extends AppCompatActivity {
             tvEmptyOrders.setVisibility(View.VISIBLE);
         } else {
             tvEmptyOrders.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (userId != null) {
+            loadOrderHistory();
         }
     }
 }

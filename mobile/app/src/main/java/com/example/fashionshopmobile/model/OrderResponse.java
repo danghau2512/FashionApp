@@ -24,10 +24,37 @@ public class OrderResponse {
     private String createdAt;
 
     private List<OrderItemResponse> items;
-    private String productImageUrl;
 
     public Long getId() {
         return id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public String getReceiverName() {
+        return receiverName;
+    }
+
+    public String getReceiverPhone() {
+        return receiverPhone;
+    }
+
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public BigDecimal getTotalProductPrice() {
+        return totalProductPrice;
+    }
+
+    public BigDecimal getShippingFee() {
+        return shippingFee;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
     }
 
     public BigDecimal getTotalAmount() {
@@ -46,15 +73,15 @@ public class OrderResponse {
         return orderStatus;
     }
 
+    public String getNote() {
+        return note;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
     public List<OrderItemResponse> getItems() {
         return items;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public String getProductImageUrl() {
-        return productImageUrl;
     }
 }

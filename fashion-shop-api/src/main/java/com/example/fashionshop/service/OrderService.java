@@ -249,11 +249,25 @@ public class OrderService {
                 item.getProduct() != null ? item.getProduct().getId() : null,
                 item.getVariant() != null ? item.getVariant().getId() : null,
                 item.getProductName(),
+                getOrderItemImageUrl(item),
                 item.getSize(),
                 item.getColor(),
                 item.getPrice(),
                 item.getQuantity(),
                 item.getSubtotal()
         );
+    }
+    private String getOrderItemImageUrl(OrderItem item) {
+        if (item.getVariant() != null
+                && item.getVariant().getImageUrl() != null
+                && !item.getVariant().getImageUrl().isBlank()) {
+            return item.getVariant().getImageUrl();
+        }
+
+        if (item.getProduct() != null) {
+            return item.getProduct().getImageUrl();
+        }
+
+        return null;
     }
 }
