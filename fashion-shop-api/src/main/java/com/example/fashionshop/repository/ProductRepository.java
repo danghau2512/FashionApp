@@ -2,12 +2,13 @@ package com.example.fashionshop.repository;
 
 import com.example.fashionshop.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
     List<Product> findByStatus(String status);
 
@@ -22,7 +23,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         FROM Product p
     """)
     Long getTotalSoldQuantity();
-
 
     @Query("""
         SELECT p
