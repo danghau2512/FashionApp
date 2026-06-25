@@ -239,6 +239,12 @@ public interface ApiService {
             @Path("orderId") Long orderId
     );
 
+    @PUT("api/admin/orders/{orderId}/ship")
+    Call<AdminOrderDetail> shipAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
     @PUT("api/admin/orders/{orderId}/confirm")
     Call<AdminOrderDetail> confirmAdminOrder(
             @Path("orderId") Long orderId,
@@ -256,6 +262,10 @@ public interface ApiService {
     Call<ImageUploadResponse> uploadAdminImage(
             @Query("adminId") Long adminId,
             @Part MultipartBody.Part file
+    @PUT("api/orders/{orderId}/complete")
+    Call<OrderResponse> completeOrder(
+            @Path("orderId") Long orderId,
+            @Query("userId") Long userId
     );
 
 }
