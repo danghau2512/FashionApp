@@ -15,6 +15,7 @@ import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.VnPayPaymentResponse;
 import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
@@ -256,6 +257,10 @@ public interface ApiService {
             @Path("orderId") Long orderId,
             @Body AdminOrderActionRequest request
     );
+    @POST("api/payments/vnpay/create/{orderId}")
+    Call<VnPayPaymentResponse> createVnPayPayment(@Path("orderId") Long orderId);
+
+
 
     @Multipart
     @POST("api/admin/uploads/images")
