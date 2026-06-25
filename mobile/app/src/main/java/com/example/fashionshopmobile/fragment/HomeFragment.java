@@ -1,10 +1,15 @@
 package com.example.fashionshopmobile.fragment;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,6 +50,8 @@ public class HomeFragment extends Fragment {
     private TextView txtCartBadge;
     private TextView tvProductSectionTitle;
     private TextView tvViewAllProducts;
+    private TextView btnSearchIcon;
+    private EditText edtSearch;
     private ImageView imgHomeAvatar;
 
     private RecyclerView rvProducts;
@@ -95,6 +102,9 @@ public class HomeFragment extends Fragment {
 
         tvProductSectionTitle = view.findViewById(R.id.tvProductSectionTitle);
         tvViewAllProducts = view.findViewById(R.id.tvViewAllProducts);
+
+        btnSearchIcon = view.findViewById(R.id.btnSearchIcon);
+        edtSearch = view.findViewById(R.id.edtSearch);
     }
 
     private void showUserName() {
@@ -163,6 +173,54 @@ public class HomeFragment extends Fragment {
         }
 
         tvHello.setOnClickListener(v -> openEditProfile());
+
+        btnSearchIcon.setOnClickListener(v -> openSearchResult());
+
+        edtSearch.setOnEditorActionListener((v, actionId, event) -> {
+            boolean isSearchAction = actionId == EditorInfo.IME_ACTION_SEARCH;
+            boolean isEnterKey = event != null
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER
+                    && event.getAction() == KeyEvent.ACTION_UP;
+
+            if (isSearchAction || isEnterKey) {
+                openSearchResult();
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    private void openSearchResult() {
+        String keyword = edtSearch.getText() == null ? "" : edtSearch.getText().toString().trim();
+
+        if (keyword.isEmpty()) {
+            Toast.makeText(requireContext(), "Nhập tên sản phẩm cần tìm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        hideKeyboard();
+
+        Intent intent = new Intent(requireContext(), ProductListActivity.class);
+        intent.putExtra("keyword", keyword);
+        intent.putExtra("category_id", 0L);
+        intent.putExtra("category_name", "Kết quả tìm kiếm");
+        startActivity(intent);
+    }
+
+    private void hideKeyboard() {
+        View currentView = requireActivity().getCurrentFocus();
+
+        if (currentView == null) {
+            currentView = edtSearch;
+        }
+
+        InputMethodManager inputMethodManager =
+                (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        if (inputMethodManager != null) {
+            inputMethodManager.hideSoftInputFromWindow(currentView.getWindowToken(), 0);
+        }
     }
 
     private void openEditProfile() {
