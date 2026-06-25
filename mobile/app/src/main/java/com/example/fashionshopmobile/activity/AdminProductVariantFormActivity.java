@@ -19,26 +19,6 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import android.net.Uri;
-import android.webkit.MimeTypeMap;
-import android.widget.ImageView;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-
-import com.bumptech.glide.Glide;
-import com.example.fashionshopmobile.model.ImageUploadResponse;
-import com.example.fashionshopmobile.utils.ImageUrlUtils;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-
 public class AdminProductVariantFormActivity extends AppCompatActivity {
 
     private TextView btnBack;
@@ -46,10 +26,6 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
     private TextView btnSave;
     private TextView btnCancel;
     private TextView txtMessage;
-    private TextView btnChooseImage;
-    private ImageView imgPreview;
-    private ActivityResultLauncher<String> imagePickerLauncher;
-    private Uri selectedImageUri;
 
     private EditText edtSize;
     private EditText edtColor;
@@ -91,7 +67,6 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
         }
 
         initViews();
-        setupImagePicker();
         setupStatusSpinner();
         setupEvents();
 
@@ -108,8 +83,6 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btnSaveAdminVariant);
         btnCancel = findViewById(R.id.btnCancelAdminVariantForm);
         txtMessage = findViewById(R.id.txtAdminVariantFormMessage);
-        btnChooseImage = findViewById(R.id.btnChooseAdminVariantImage);
-        imgPreview = findViewById(R.id.imgAdminVariantPreview);
 
         edtSize = findViewById(R.id.edtAdminVariantSize);
         edtColor = findViewById(R.id.edtAdminVariantColor);
@@ -132,8 +105,6 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnCancel.setOnClickListener(v -> finish());
         btnSave.setOnClickListener(v -> saveVariant());
-
-        btnChooseImage.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
     }
 
     private void loadVariantDetail() {
@@ -165,11 +136,6 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
         edtColor.setText(variant.getColor());
         edtQuantity.setText(variant.getQuantity() != null ? String.valueOf(variant.getQuantity()) : "");
         edtImageUrl.setText(variant.getImageUrl());
-        Glide.with(this)
-                .load(ImageUrlUtils.getFullImageUrl(variant.getImageUrl()))
-                .placeholder(R.mipmap.ic_launcher)
-                .error(R.mipmap.ic_launcher)
-                .into(imgPreview);
 
         selectStatus(variant.getStatus());
     }
@@ -230,32 +196,21 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
             return;
         }
 
+        AdminProductVariantRequest request = new AdminProductVariantRequest(
+                size,
+                color,
+                quantity,
+                imageUrl,
+                status
+        );
+
         btnSave.setEnabled(false);
+        txtMessage.setText(editMode ? "Đang cập nhật biến thể..." : "Đang thêm biến thể...");
 
-        if (selectedImageUri != null) {
-            uploadSelectedImageThenSave(
-                    adminId,
-                    size,
-                    color,
-                    quantity,
-                    status
-            );
+        if (editMode) {
+            updateVariant(adminId, request);
         } else {
-            AdminProductVariantRequest request = new AdminProductVariantRequest(
-                    size,
-                    color,
-                    quantity,
-                    imageUrl,
-                    status
-            );
-
-            txtMessage.setText(editMode ? "Đang cập nhật biến thể..." : "Đang thêm biến thể...");
-
-            if (editMode) {
-                updateVariant(adminId, request);
-            } else {
-                createVariant(adminId, request);
-            }
+            createVariant(adminId, request);
         }
     }
 
@@ -311,124 +266,5 @@ public class AdminProductVariantFormActivity extends AppCompatActivity {
                         txtMessage.setText("Lỗi API: " + t.getMessage());
                     }
                 });
-    }
-
-    private void setupImagePicker() {
-        imagePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        selectedImageUri = uri;
-
-                        Glide.with(this)
-                                .load(uri)
-                                .placeholder(R.mipmap.ic_launcher)
-                                .error(R.mipmap.ic_launcher)
-                                .into(imgPreview);
-
-                        txtMessage.setText("Đã chọn ảnh. Ảnh sẽ được upload khi bấm Lưu.");
-                    }
-                }
-        );
-    }
-
-    private void uploadSelectedImageThenSave(Long adminId,
-                                             String size,
-                                             String color,
-                                             int quantity,
-                                             String status) {
-        if (selectedImageUri == null) {
-            txtMessage.setText("Chưa chọn ảnh để upload");
-            btnSave.setEnabled(true);
-            return;
-        }
-
-        try {
-            MultipartBody.Part imagePart = createImagePart(selectedImageUri);
-
-            txtMessage.setText("Đang upload ảnh...");
-
-            ApiClient.getApiService()
-                    .uploadAdminImage(adminId, imagePart)
-                    .enqueue(new Callback<ImageUploadResponse>() {
-                        @Override
-                        public void onResponse(Call<ImageUploadResponse> call,
-                                               Response<ImageUploadResponse> response) {
-                            if (response.isSuccessful()
-                                    && response.body() != null
-                                    && response.body().getImageUrl() != null) {
-
-                                String newImageUrl = response.body().getImageUrl();
-                                edtImageUrl.setText(newImageUrl);
-
-                                AdminProductVariantRequest request = new AdminProductVariantRequest(
-                                        size,
-                                        color,
-                                        quantity,
-                                        newImageUrl,
-                                        status
-                                );
-
-                                txtMessage.setText("Upload ảnh thành công. Đang lưu biến thể...");
-
-                                if (editMode) {
-                                    updateVariant(adminId, request);
-                                } else {
-                                    createVariant(adminId, request);
-                                }
-                            } else {
-                                btnSave.setEnabled(true);
-                                txtMessage.setText("Upload ảnh thất bại");
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Call<ImageUploadResponse> call, Throwable t) {
-                            btnSave.setEnabled(true);
-                            txtMessage.setText("Lỗi upload ảnh: " + t.getMessage());
-                        }
-                    });
-
-        } catch (Exception e) {
-            btnSave.setEnabled(true);
-            txtMessage.setText("Không đọc được ảnh: " + e.getMessage());
-        }
-    }
-
-    private MultipartBody.Part createImagePart(Uri uri) throws IOException {
-        String mimeType = getContentResolver().getType(uri);
-
-        if (mimeType == null) {
-            mimeType = "image/jpeg";
-        }
-
-        String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
-
-        if (extension == null) {
-            extension = "jpg";
-        }
-
-        File tempFile = new File(
-                getCacheDir(),
-                "upload_" + System.currentTimeMillis() + "." + extension
-        );
-
-        try (InputStream inputStream = getContentResolver().openInputStream(uri);
-             FileOutputStream outputStream = new FileOutputStream(tempFile)) {
-
-            if (inputStream == null) {
-                throw new IOException("Không mở được file ảnh");
-            }
-
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-        }
-
-        RequestBody requestBody = RequestBody.create(MediaType.parse(mimeType), tempFile);
-        return MultipartBody.Part.createFormData("file", tempFile.getName(), requestBody);
     }
 }
