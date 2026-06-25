@@ -1,10 +1,8 @@
 package com.example.fashionshop.service;
 
-import com.example.fashionshop.dto.CreateOrderRequest;
-import com.example.fashionshop.dto.OrderItemResponse;
-import com.example.fashionshop.dto.OrderResponse;
-import com.example.fashionshop.dto.OrderSummaryResponse;
+import com.example.fashionshop.dto.*;
 import com.example.fashionshop.entity.*;
+import com.example.fashionshop.integration.ghn.service.GhnShippingService;
 import com.example.fashionshop.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +19,15 @@ public class OrderService {
     private final ShopOrderRepository shopOrderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final GhnShippingService ghnShippingService;
 
-    public OrderService(UserRepository userRepository,
-                        CartItemRepository cartItemRepository,
-                        ShopOrderRepository shopOrderRepository,
-                        OrderItemRepository orderItemRepository,
-                        ProductVariantRepository productVariantRepository) {
+    public OrderService(UserRepository userRepository, CartItemRepository cartItemRepository, ShopOrderRepository shopOrderRepository, OrderItemRepository orderItemRepository, ProductVariantRepository productVariantRepository, GhnShippingService ghnShippingService) {
         this.userRepository = userRepository;
         this.cartItemRepository = cartItemRepository;
         this.shopOrderRepository = shopOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productVariantRepository = productVariantRepository;
+        this.ghnShippingService = ghnShippingService;
     }
 
     @Transactional
@@ -78,7 +74,17 @@ public class OrderService {
             totalProductPrice = totalProductPrice.add(subtotal);
         }
 
-        BigDecimal shippingFee = new BigDecimal("30000");
+        ShippingQuoteRequest quoteRequest = new ShippingQuoteRequest(
+                request.getUserId(),
+                cartItemIds,
+                request.getDeliveryDistrictId(),
+                request.getDeliveryWardCode()
+        );
+
+        ShippingQuoteResponse quote =
+                ghnShippingService.getQuote(quoteRequest);
+
+        BigDecimal shippingFee = quote.getShippingFee();
 
         BigDecimal discountAmount = BigDecimal.ZERO;
 

@@ -6,7 +6,12 @@ import com.example.fashionshop.integration.ghn.dto.GhnProvince;
 import com.example.fashionshop.integration.ghn.dto.GhnResponse;
 import com.example.fashionshop.integration.ghn.dto.GhnWard;
 import com.example.fashionshop.integration.ghn.dto.GhnWardRequest;
-
+import com.example.fashionshop.integration.ghn.dto.GhnAvailableService;
+import com.example.fashionshop.integration.ghn.dto.GhnAvailableServiceRequest;
+import com.example.fashionshop.integration.ghn.dto.GhnFeeData;
+import com.example.fashionshop.integration.ghn.dto.GhnFeeRequest;
+import com.example.fashionshop.integration.ghn.dto.GhnLeadtimeData;
+import com.example.fashionshop.integration.ghn.dto.GhnLeadtimeRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -18,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+
 import java.util.List;
 
 @Component
@@ -26,13 +32,22 @@ public class GhnClient {
     private final RestTemplate restTemplate;
     private final String baseUrl;
     private final String token;
+    private final Integer shopId;
+    private final Integer fromDistrictId;
+    private final String fromWardCode;
 
     public GhnClient(RestTemplate restTemplate,
                      @Value("${ghn.base-url}") String baseUrl,
-                     @Value("${ghn.token}") String token) {
+                     @Value("${ghn.token}") String token,
+                     @Value("${ghn.shop-id}") Integer shopId,
+                     @Value("${ghn.from-district-id}") Integer fromDistrictId,
+                     @Value("${ghn.from-ward-code}") String fromWardCode) {
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl;
         this.token = token;
+        this.shopId = shopId;
+        this.fromDistrictId = fromDistrictId;
+        this.fromWardCode = fromWardCode;
     }
 
     public List<GhnProvince> getProvinces() {
@@ -176,5 +191,137 @@ public class GhnClient {
         }
 
         return responseBody.getData();
+    }
+    public List<GhnAvailableService> getAvailableServices(Integer toDistrictId) {
+        checkShippingConfig();
+
+        String url = baseUrl + "/v2/shipping-order/available-services";
+
+        GhnAvailableServiceRequest requestBody =
+                new GhnAvailableServiceRequest(shopId, fromDistrictId, toDistrictId);
+
+        HttpEntity<GhnAvailableServiceRequest> requestEntity =
+                new HttpEntity<>(requestBody, createHeaders());
+
+        try {
+            ResponseEntity<GhnResponse<List<GhnAvailableService>>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            requestEntity,
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            return extractData(response);
+        } catch (RestClientException exception) {
+            throw new RuntimeException(
+                    "Không thể lấy dịch vụ vận chuyển từ GHN",
+                    exception
+            );
+        }
+    }
+
+    public GhnFeeData calculateFee(Integer toDistrictId,
+                                   String toWardCode,
+                                   Integer serviceId,
+                                   Integer weight,
+                                   Integer length,
+                                   Integer width,
+                                   Integer height) {
+        checkShippingConfig();
+
+        String url = baseUrl + "/v2/shipping-order/fee";
+
+        GhnFeeRequest requestBody = new GhnFeeRequest(
+                fromDistrictId,
+                fromWardCode,
+                toDistrictId,
+                toWardCode,
+                serviceId,
+                weight,
+                length,
+                width,
+                height
+        );
+
+        HttpEntity<GhnFeeRequest> requestEntity =
+                new HttpEntity<>(requestBody, createShippingHeaders());
+
+        try {
+            ResponseEntity<GhnResponse<GhnFeeData>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            requestEntity,
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            return extractData(response);
+        } catch (RestClientException exception) {
+            throw new RuntimeException(
+                    "Không thể tính phí vận chuyển GHN",
+                    exception
+            );
+        }
+    }
+
+    public GhnLeadtimeData calculateLeadtime(Integer toDistrictId,
+                                             String toWardCode,
+                                             Integer serviceId) {
+        checkShippingConfig();
+
+        String url = baseUrl + "/v2/shipping-order/leadtime";
+
+        GhnLeadtimeRequest requestBody = new GhnLeadtimeRequest(
+                fromDistrictId,
+                fromWardCode,
+                toDistrictId,
+                toWardCode,
+                serviceId
+        );
+
+        HttpEntity<GhnLeadtimeRequest> requestEntity =
+                new HttpEntity<>(requestBody, createShippingHeaders());
+
+        try {
+            ResponseEntity<GhnResponse<GhnLeadtimeData>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            requestEntity,
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            return extractData(response);
+        } catch (RestClientException exception) {
+            throw new RuntimeException(
+                    "Không thể tính thời gian giao dự kiến từ GHN",
+                    exception
+            );
+        }
+    }
+    private HttpHeaders createShippingHeaders() {
+        HttpHeaders headers = createHeaders();
+        headers.set("ShopId", String.valueOf(shopId));
+        return headers;
+    }
+
+    private void checkShippingConfig() {
+        checkToken();
+
+        if (shopId == null) {
+            throw new IllegalStateException("Chưa cấu hình GHN_SHOP_ID");
+        }
+
+        if (fromDistrictId == null) {
+            throw new IllegalStateException("Chưa cấu hình GHN_FROM_DISTRICT_ID");
+        }
+
+        if (fromWardCode == null || fromWardCode.isBlank()) {
+            throw new IllegalStateException("Chưa cấu hình GHN_FROM_WARD_CODE");
+        }
     }
 }

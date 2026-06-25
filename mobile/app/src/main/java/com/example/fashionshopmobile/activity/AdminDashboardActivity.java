@@ -35,7 +35,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private TextView btnAdminOrders;
     private TextView btnAdminProducts;
     private TextView btnAdminUsers;
-
     private SessionManager sessionManager;
 
     private final NumberFormat priceFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
@@ -87,11 +86,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private void setupClickEvents() {
         btnAdminLogout.setOnClickListener(v -> logout());
 
-        btnAdminStatistics.setOnClickListener(v -> {
-            Toast.makeText(this, "Chức năng thống kê sẽ làm ở bước sau", Toast.LENGTH_SHORT).show();
-        });
         btnAdminOrders.setOnClickListener(v -> {
-            Toast.makeText(this, "Quản lý đơn hàng sẽ làm ở bước sau", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminOrderListActivity.class);
+            startActivity(intent);
         });
 
         btnAdminProducts.setOnClickListener(v -> {
@@ -101,6 +98,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         btnAdminUsers.setOnClickListener(v -> {
             Toast.makeText(this, "Quản lý người dùng sẽ làm ở bước sau", Toast.LENGTH_SHORT).show();
+        });
+        btnAdminStatistics.setOnClickListener(v -> {
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminStatisticsActivity.class);
+            startActivity(intent);
         });
     }
 
