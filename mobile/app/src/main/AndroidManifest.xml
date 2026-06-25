@@ -82,6 +82,14 @@
             android:exported="false" />
 
         <activity
+            android:name=".activity.AdminOrderListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AdminOrderDetailActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activity.LoginActivity"
             android:exported="true">
 

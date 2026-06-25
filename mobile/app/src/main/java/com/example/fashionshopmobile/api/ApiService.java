@@ -1,6 +1,8 @@
 package com.example.fashionshopmobile.api;
 
 import com.example.fashionshopmobile.model.AdminDashboard;
+import com.example.fashionshopmobile.model.AdminOrderDetail;
+import com.example.fashionshopmobile.model.AdminOrderSummary;
 import com.example.fashionshopmobile.model.AdminStatistics;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
@@ -14,6 +16,7 @@ import com.example.fashionshopmobile.model.UserAddress;
 import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
+import com.example.fashionshopmobile.request.AdminOrderActionRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
 import com.example.fashionshopmobile.request.ShippingQuoteRequest;
 import com.example.fashionshopmobile.request.UpdateCartItemRequest;
@@ -132,4 +135,28 @@ public interface ApiService {
             @Query("bestSellerMonths") Integer bestSellerMonths,
             @Query("noSaleMonths") Integer noSaleMonths
     );
+
+    @GET("api/admin/orders")
+    Call<List<AdminOrderSummary>> getAdminOrders(
+            @Query("keyword") String keyword,
+            @Query("status") String status
+    );
+
+    @GET("api/admin/orders/{orderId}")
+    Call<AdminOrderDetail> getAdminOrderDetail(
+            @Path("orderId") Long orderId
+    );
+
+    @PUT("api/admin/orders/{orderId}/confirm")
+    Call<AdminOrderDetail> confirmAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
+    @PUT("api/admin/orders/{orderId}/cancel-by-admin")
+    Call<AdminOrderDetail> cancelAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
 }
