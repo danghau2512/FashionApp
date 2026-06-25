@@ -75,9 +75,6 @@
                 <TextView android:id="@+id/txtPayment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:textColor="@color/dark_text" android:textSize="14sp" />
                 <TextView android:id="@+id/txtOrderStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:textColor="@color/dark_text" android:textSize="14sp" android:textStyle="bold" />
                 <TextView android:id="@+id/txtNote" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:textColor="@color/gray_text" android:textSize="14sp" />
-                <TextView android:id="@+id/txtConfirmedInfo" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:textColor="@color/gray_text" android:textSize="14sp" />
-                <TextView android:id="@+id/txtCancelledInfo" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:textColor="@color/gray_text" android:textSize="14sp" />
-                <TextView android:id="@+id/txtCancelReason" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:textColor="@color/gray_text" android:textSize="14sp" />
             </LinearLayout>
 
             <TextView
@@ -102,7 +99,7 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="14dp"
                 android:backgroundTint="@color/primary_pink"
-                android:text="Xác nhận đơn"
+                android:text="Giao hàng"
                 android:textColor="@color/white"
                 android:textStyle="bold" />
 

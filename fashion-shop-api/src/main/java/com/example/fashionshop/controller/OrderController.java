@@ -37,4 +37,9 @@ public class OrderController {
     public OrderResponse cancelOrder(@PathVariable Long orderId) {
         return orderService.cancelOrder(orderId);
     }
+
+    @PutMapping("/{orderId}/complete")
+    public OrderResponse completeOrder(@PathVariable Long orderId, @RequestParam Long userId) {
+        return orderService.completeOrder(orderId, userId);
+    }
 }

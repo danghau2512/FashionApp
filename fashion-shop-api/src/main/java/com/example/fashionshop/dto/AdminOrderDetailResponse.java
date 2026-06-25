@@ -20,13 +20,6 @@ public class AdminOrderDetailResponse {
     private String orderStatus;
     private String note;
     private LocalDateTime createdAt;
-    private Long confirmedByAdminId;
-    private String confirmedByAdminName;
-    private LocalDateTime confirmedAt;
-    private Long cancelledByAdminId;
-    private String cancelledByAdminName;
-    private LocalDateTime cancelledAt;
-    private String cancelReason;
     private List<AdminOrderItemResponse> items;
 
     public AdminOrderDetailResponse(Long id, Long userId, String receiverName, String receiverPhone,
@@ -34,9 +27,7 @@ public class AdminOrderDetailResponse {
                                     BigDecimal shippingFee, BigDecimal discountAmount,
                                     BigDecimal totalAmount, String paymentMethod, String paymentStatus,
                                     String orderStatus, String note, LocalDateTime createdAt,
-                                    Long confirmedByAdminId, String confirmedByAdminName, LocalDateTime confirmedAt,
-                                    Long cancelledByAdminId, String cancelledByAdminName, LocalDateTime cancelledAt,
-                                    String cancelReason, List<AdminOrderItemResponse> items) {
+                                    List<AdminOrderItemResponse> items) {
         this.id = id;
         this.userId = userId;
         this.receiverName = receiverName;
@@ -51,13 +42,6 @@ public class AdminOrderDetailResponse {
         this.orderStatus = orderStatus;
         this.note = note;
         this.createdAt = createdAt;
-        this.confirmedByAdminId = confirmedByAdminId;
-        this.confirmedByAdminName = confirmedByAdminName;
-        this.confirmedAt = confirmedAt;
-        this.cancelledByAdminId = cancelledByAdminId;
-        this.cancelledByAdminName = cancelledByAdminName;
-        this.cancelledAt = cancelledAt;
-        this.cancelReason = cancelReason;
         this.items = items;
     }
 
@@ -75,12 +59,5 @@ public class AdminOrderDetailResponse {
     public String getOrderStatus() { return orderStatus; }
     public String getNote() { return note; }
     public LocalDateTime getCreatedAt() { return createdAt; }
-    public Long getConfirmedByAdminId() { return confirmedByAdminId; }
-    public String getConfirmedByAdminName() { return confirmedByAdminName; }
-    public LocalDateTime getConfirmedAt() { return confirmedAt; }
-    public Long getCancelledByAdminId() { return cancelledByAdminId; }
-    public String getCancelledByAdminName() { return cancelledByAdminName; }
-    public LocalDateTime getCancelledAt() { return cancelledAt; }
-    public String getCancelReason() { return cancelReason; }
     public List<AdminOrderItemResponse> getItems() { return items; }
 }

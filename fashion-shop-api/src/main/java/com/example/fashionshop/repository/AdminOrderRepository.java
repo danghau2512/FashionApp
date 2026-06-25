@@ -26,17 +26,8 @@ public interface AdminOrderRepository extends JpaRepository<ShopOrder, Long> {
             o.payment_status AS paymentStatus,
             o.order_status AS orderStatus,
             o.note AS note,
-            o.created_at AS createdAt,
-            o.confirmed_by_admin_id AS confirmedByAdminId,
-            confirmed_admin.full_name AS confirmedByAdminName,
-            o.confirmed_at AS confirmedAt,
-            o.cancelled_by_admin_id AS cancelledByAdminId,
-            cancelled_admin.full_name AS cancelledByAdminName,
-            o.cancelled_at AS cancelledAt,
-            o.cancel_reason AS cancelReason
+            o.created_at AS createdAt
         FROM orders o
-        LEFT JOIN users confirmed_admin ON confirmed_admin.id = o.confirmed_by_admin_id
-        LEFT JOIN users cancelled_admin ON cancelled_admin.id = o.cancelled_by_admin_id
         WHERE (:status IS NULL OR :status = '' OR o.order_status = :status)
           AND (
                 :keyword IS NULL OR :keyword = ''
@@ -64,17 +55,8 @@ public interface AdminOrderRepository extends JpaRepository<ShopOrder, Long> {
             o.payment_status AS paymentStatus,
             o.order_status AS orderStatus,
             o.note AS note,
-            o.created_at AS createdAt,
-            o.confirmed_by_admin_id AS confirmedByAdminId,
-            confirmed_admin.full_name AS confirmedByAdminName,
-            o.confirmed_at AS confirmedAt,
-            o.cancelled_by_admin_id AS cancelledByAdminId,
-            cancelled_admin.full_name AS cancelledByAdminName,
-            o.cancelled_at AS cancelledAt,
-            o.cancel_reason AS cancelReason
+            o.created_at AS createdAt
         FROM orders o
-        LEFT JOIN users confirmed_admin ON confirmed_admin.id = o.confirmed_by_admin_id
-        LEFT JOIN users cancelled_admin ON cancelled_admin.id = o.cancelled_by_admin_id
         WHERE o.id = :orderId
     """, nativeQuery = true)
     Optional<AdminOrderProjection> findAdminOrderDetail(@Param("orderId") Long orderId);
@@ -82,14 +64,11 @@ public interface AdminOrderRepository extends JpaRepository<ShopOrder, Long> {
     @Modifying
     @Query(value = """
         UPDATE orders
-        SET order_status = 'CONFIRMED',
-            confirmed_by_admin_id = :adminId,
-            confirmed_at = NOW(),
+        SET order_status = 'SHIPPING',
             updated_at = NOW()
         WHERE id = :orderId
     """, nativeQuery = true)
-    int confirmOrder(@Param("orderId") Long orderId,
-                     @Param("adminId") Long adminId);
+    int shipOrder(@Param("orderId") Long orderId);
 
     @Modifying
     @Query(value = """
@@ -99,13 +78,8 @@ public interface AdminOrderRepository extends JpaRepository<ShopOrder, Long> {
                 WHEN payment_status = 'PAID' THEN payment_status
                 ELSE 'CANCELLED'
             END,
-            cancelled_by_admin_id = :adminId,
-            cancelled_at = NOW(),
-            cancel_reason = :cancelReason,
             updated_at = NOW()
         WHERE id = :orderId
     """, nativeQuery = true)
-    int cancelOrderByAdmin(@Param("orderId") Long orderId,
-                           @Param("adminId") Long adminId,
-                           @Param("cancelReason") String cancelReason);
+    int cancelOrderByAdmin(@Param("orderId") Long orderId);
 }
