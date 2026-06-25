@@ -19,6 +19,12 @@ import com.example.fashionshopmobile.request.UserSyncRequest;
 import com.example.fashionshopmobile.model.shipping.GhnDistrict;
 import com.example.fashionshopmobile.model.shipping.GhnProvince;
 import com.example.fashionshopmobile.model.shipping.GhnWard;
+import com.example.fashionshopmobile.model.AdminProductResponse;
+import com.example.fashionshopmobile.request.AdminProductRequest;
+import com.example.fashionshopmobile.request.UpdateProductStatusRequest;
+import com.example.fashionshopmobile.model.AdminProductVariantResponse;
+import com.example.fashionshopmobile.request.AdminProductVariantRequest;
+import com.example.fashionshopmobile.request.UpdateProductVariantStatusRequest;
 import java.util.List;
 
 import retrofit2.Call;
@@ -120,4 +126,65 @@ public interface ApiService {
     Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
+
+    @GET("api/admin/products")
+    Call<List<AdminProductResponse>> getAdminProducts(
+            @Query("keyword") String keyword,
+            @Query("status") String status,
+            @Query("categoryId") Long categoryId
+    );
+
+    @GET("api/admin/products/{id}")
+    Call<AdminProductResponse> getAdminProductById(@Path("id") Long id);
+
+    @POST("api/admin/products")
+    Call<AdminProductResponse> createAdminProduct(
+            @Query("adminId") Long adminId,
+            @Body AdminProductRequest request
+    );
+
+    @PUT("api/admin/products/{id}")
+    Call<AdminProductResponse> updateAdminProduct(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminProductRequest request
+    );
+
+    @PUT("api/admin/products/{id}/status")
+    Call<AdminProductResponse> updateAdminProductStatus(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body UpdateProductStatusRequest request
+    );
+
+    @GET("api/admin/products/{productId}/variants")
+    Call<List<AdminProductVariantResponse>> getAdminProductVariants(
+            @Path("productId") Long productId
+    );
+
+    @GET("api/admin/variants/{id}")
+    Call<AdminProductVariantResponse> getAdminProductVariantById(
+            @Path("id") Long id
+    );
+
+    @POST("api/admin/products/{productId}/variants")
+    Call<AdminProductVariantResponse> createAdminProductVariant(
+            @Path("productId") Long productId,
+            @Query("adminId") Long adminId,
+            @Body AdminProductVariantRequest request
+    );
+
+    @PUT("api/admin/variants/{id}")
+    Call<AdminProductVariantResponse> updateAdminProductVariant(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminProductVariantRequest request
+    );
+
+    @PUT("api/admin/variants/{id}/status")
+    Call<AdminProductVariantResponse> updateAdminProductVariantStatus(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body UpdateProductVariantStatusRequest request
+    );
 }
