@@ -225,6 +225,31 @@ public class OrderService {
         return toOrderResponse(savedOrder, orderItems);
     }
 
+    @Transactional
+    public OrderResponse completeOrder(Long orderId, Long userId) {
+        ShopOrder order = shopOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        if (order.getUser() == null || !order.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Đơn hàng không thuộc người dùng này");
+        }
+
+        if (!"SHIPPING".equals(order.getOrderStatus())) {
+            throw new RuntimeException("Chỉ có thể xác nhận đã nhận khi đơn hàng đang vận chuyển");
+        }
+
+        order.setOrderStatus("COMPLETED");
+
+        if ("COD".equalsIgnoreCase(order.getPaymentMethod()) && !"PAID".equals(order.getPaymentStatus())) {
+            order.setPaymentStatus("PAID");
+        }
+
+        ShopOrder savedOrder = shopOrderRepository.save(order);
+        List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(orderId);
+
+        return toOrderResponse(savedOrder, orderItems);
+    }
+
     private OrderResponse toOrderResponse(ShopOrder order, List<OrderItem> orderItems) {
         List<OrderItemResponse> itemResponses = orderItems.stream()
                 .map(this::toOrderItemResponse)

@@ -233,6 +233,12 @@ public interface ApiService {
             @Path("orderId") Long orderId
     );
 
+    @PUT("api/admin/orders/{orderId}/ship")
+    Call<AdminOrderDetail> shipAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
     @PUT("api/admin/orders/{orderId}/confirm")
     Call<AdminOrderDetail> confirmAdminOrder(
             @Path("orderId") Long orderId,
@@ -243,6 +249,12 @@ public interface ApiService {
     Call<AdminOrderDetail> cancelAdminOrder(
             @Path("orderId") Long orderId,
             @Body AdminOrderActionRequest request
+    );
+
+    @PUT("api/orders/{orderId}/complete")
+    Call<OrderResponse> completeOrder(
+            @Path("orderId") Long orderId,
+            @Query("userId") Long userId
     );
 
 }

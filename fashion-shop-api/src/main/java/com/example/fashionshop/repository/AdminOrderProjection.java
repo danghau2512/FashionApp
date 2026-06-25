@@ -18,11 +18,4 @@ public interface AdminOrderProjection {
     String getOrderStatus();
     String getNote();
     LocalDateTime getCreatedAt();
-    Long getConfirmedByAdminId();
-    String getConfirmedByAdminName();
-    LocalDateTime getConfirmedAt();
-    Long getCancelledByAdminId();
-    String getCancelledByAdminName();
-    LocalDateTime getCancelledAt();
-    String getCancelReason();
 }
