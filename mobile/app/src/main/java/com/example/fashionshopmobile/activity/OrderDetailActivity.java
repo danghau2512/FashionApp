@@ -39,7 +39,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     private TextView tvTotalProductPrice, tvShippingFee, tvDiscountAmount, tvTotalAmount;
     private TextView tvEmptyOrderItems;
     private RecyclerView rvOrderDetailProducts;
-    private Button btnCancelOrder;
+    private Button btnCancelOrder, btnCompleteOrder;
 
     private OrderDetailProductAdapter productAdapter;
     private Long orderId;
@@ -89,6 +89,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         rvOrderDetailProducts = findViewById(R.id.rvOrderDetailProducts);
 
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
+        btnCompleteOrder = findViewById(R.id.btnCompleteOrder);
     }
 
     private void setupRecyclerView() {
@@ -102,6 +103,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         btnCancelOrder.setOnClickListener(v -> showCancelConfirmDialog());
+        btnCompleteOrder.setOnClickListener(v -> showCompleteConfirmDialog());
     }
 
     private void loadOrderDetail() {
@@ -149,6 +151,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         }
 
         updateCancelButton(order);
+        updateCompleteButton(order);
 
         if (order.getItems() == null || order.getItems().isEmpty()) {
             tvEmptyOrderItems.setVisibility(View.VISIBLE);
@@ -170,6 +173,57 @@ public class OrderDetailActivity extends AppCompatActivity {
         } else {
             btnCancelOrder.setVisibility(View.GONE);
         }
+    }
+
+
+    private void updateCompleteButton(OrderResponse order) {
+        boolean canComplete = "SHIPPING".equals(order.getOrderStatus());
+
+        if (canComplete) {
+            btnCompleteOrder.setVisibility(View.VISIBLE);
+        } else {
+            btnCompleteOrder.setVisibility(View.GONE);
+        }
+    }
+
+    private void showCompleteConfirmDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Đã nhận hàng")
+                .setMessage("Bạn xác nhận đã nhận được đơn hàng này?")
+                .setNegativeButton("Không", null)
+                .setPositiveButton("Đã nhận", (dialog, which) -> completeOrder())
+                .show();
+    }
+
+    private void completeOrder() {
+        Long userId = sessionManager.getUserId();
+        if (userId == null) {
+            Toast.makeText(this, "Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnCompleteOrder.setEnabled(false);
+
+        ApiClient.getApiService().completeOrder(orderId, userId).enqueue(new Callback<OrderResponse>() {
+            @Override
+            public void onResponse(Call<OrderResponse> call, Response<OrderResponse> response) {
+                btnCompleteOrder.setEnabled(true);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    Toast.makeText(OrderDetailActivity.this, "Đơn hàng đã hoàn thành", Toast.LENGTH_SHORT).show();
+                    bindOrderDetail(response.body());
+                    setResult(RESULT_OK);
+                } else {
+                    Toast.makeText(OrderDetailActivity.this, "Không thể xác nhận đã nhận hàng", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<OrderResponse> call, Throwable t) {
+                btnCompleteOrder.setEnabled(true);
+                Toast.makeText(OrderDetailActivity.this, "Lỗi xác nhận đã nhận hàng: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void showCancelConfirmDialog() {

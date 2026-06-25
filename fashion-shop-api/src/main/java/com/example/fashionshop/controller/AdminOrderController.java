@@ -62,6 +62,19 @@ public class AdminOrderController {
         return adminOrderService.confirmOrderByAdmin(orderId, request.getAdminId());
     }
 
+
+    /**
+     * Admin xác nhận đơn đã hoàn thành khi đơn đang vận chuyển.
+     * Dùng cho trường hợp admin cần cập nhật thay khách hoặc hoàn tất thủ công.
+     */
+    @PutMapping("/{orderId}/complete")
+    public AdminOrderDetailResponse completeOrderByAdmin(
+            @PathVariable Long orderId,
+            @Valid @RequestBody AdminOrderActionRequest request
+    ) {
+        return adminOrderService.completeOrderByAdmin(orderId, request.getAdminId());
+    }
+
     @PutMapping("/{orderId}/cancel-by-admin")
     public AdminOrderDetailResponse cancelOrderByAdmin(
             @PathVariable Long orderId,

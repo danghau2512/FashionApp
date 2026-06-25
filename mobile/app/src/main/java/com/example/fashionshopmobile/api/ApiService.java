@@ -6,7 +6,6 @@ import com.example.fashionshopmobile.model.AdminOrderSummary;
 import com.example.fashionshopmobile.model.AdminProductResponse;
 import com.example.fashionshopmobile.model.AdminProductVariantResponse;
 import com.example.fashionshopmobile.model.AdminStatistics;
-import com.example.fashionshopmobile.model.AdminUser;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.OrderResponse;
@@ -26,8 +25,6 @@ import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
 import com.example.fashionshopmobile.request.AdminOrderActionRequest;
-import com.example.fashionshopmobile.request.AdminUserRequest;
-import com.example.fashionshopmobile.request.AdminUserStatusRequest;
 import com.example.fashionshopmobile.request.AdminProductRequest;
 import com.example.fashionshopmobile.request.AdminProductVariantRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
@@ -38,6 +35,9 @@ import com.example.fashionshopmobile.request.UpdateProductStatusRequest;
 import com.example.fashionshopmobile.request.UpdateProductVariantStatusRequest;
 import com.example.fashionshopmobile.request.UpdateUserRequest;
 import com.example.fashionshopmobile.request.UserSyncRequest;
+import com.example.fashionshopmobile.model.AdminUser;
+import com.example.fashionshopmobile.request.AdminUserRequest;
+import com.example.fashionshopmobile.request.AdminUserStatusRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -278,6 +278,12 @@ public interface ApiService {
             @Body AdminOrderActionRequest request
     );
 
+    @PUT("api/admin/orders/{orderId}/complete")
+    Call<AdminOrderDetail> completeAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
     @POST("api/payments/vnpay/create/{orderId}")
     Call<VnPayPaymentResponse> createVnPayPayment(@Path("orderId") Long orderId);
 
@@ -295,8 +301,6 @@ public interface ApiService {
             @Path("orderId") Long orderId,
             @Query("userId") Long userId
     );
-
-
     @GET("api/admin/users")
     Call<List<AdminUser>> getAdminUsers(
             @Query("keyword") String keyword,
@@ -305,7 +309,9 @@ public interface ApiService {
     );
 
     @GET("api/admin/users/{id}")
-    Call<AdminUser> getAdminUserById(@Path("id") Long id);
+    Call<AdminUser> getAdminUserById(
+            @Path("id") Long id
+    );
 
     @POST("api/admin/users")
     Call<AdminUser> createAdminUser(
@@ -326,5 +332,4 @@ public interface ApiService {
             @Query("adminId") Long adminId,
             @Body AdminUserStatusRequest request
     );
-
 }
