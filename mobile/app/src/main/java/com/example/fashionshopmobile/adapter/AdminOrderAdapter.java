@@ -82,8 +82,7 @@ public class AdminOrderAdapter extends RecyclerView.Adapter<AdminOrderAdapter.Or
         if (status == null) return "Không rõ";
         switch (status) {
             case "PENDING": return "Chờ xử lý";
-            case "CONFIRMED": return "Đã xác nhận";
-            case "SHIPPING": return "Đang giao";
+            case "SHIPPING": return "Đang vận chuyển";
             case "COMPLETED": return "Hoàn thành";
             case "CANCELLED": return "Đã hủy";
             default: return status;

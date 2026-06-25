@@ -40,6 +40,20 @@ public class AdminOrderController {
         return adminOrderService.getAdminOrderDetail(orderId);
     }
 
+    /**
+     * Luồng mới: admin bấm giao hàng thì đơn chuyển PENDING -> SHIPPING.
+     */
+    @PutMapping("/{orderId}/ship")
+    public AdminOrderDetailResponse shipOrder(
+            @PathVariable Long orderId,
+            @Valid @RequestBody AdminOrderActionRequest request
+    ) {
+        return adminOrderService.shipOrderByAdmin(orderId, request.getAdminId());
+    }
+
+    /**
+     * Giữ endpoint cũ để không phá mobile cũ. Endpoint này cũng chuyển PENDING -> SHIPPING.
+     */
     @PutMapping("/{orderId}/confirm")
     public AdminOrderDetailResponse confirmOrder(
             @PathVariable Long orderId,
