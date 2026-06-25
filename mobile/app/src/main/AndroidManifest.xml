@@ -93,12 +93,29 @@
             android:name=".activity.LoginActivity"
             android:exported="true">
 
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".activity.AdminProductListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AdminProductFormActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AdminProductVariantListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AdminProductVariantFormActivity"
+            android:exported="false" />
 
     </application>
 

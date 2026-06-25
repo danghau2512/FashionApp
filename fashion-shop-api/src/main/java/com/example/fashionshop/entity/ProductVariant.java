@@ -58,4 +58,28 @@ public class ProductVariant {
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public void setSize(String size) {
+        this.size = size;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
