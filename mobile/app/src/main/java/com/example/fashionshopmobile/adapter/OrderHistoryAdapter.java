@@ -63,11 +63,14 @@ public class OrderHistoryAdapter extends RecyclerView.Adapter<OrderHistoryAdapte
                 .placeholder(R.mipmap.ic_launcher)
                 .error(R.mipmap.ic_launcher)
                 .into(holder.imgOrderProduct);
-        holder.imgOrderProduct.setOnClickListener(v -> {
+        View.OnClickListener openOrderDetailListener = v -> {
             Intent intent = new Intent(holder.itemView.getContext(), OrderDetailActivity.class);
             intent.putExtra("order_id", order.getId());
             holder.itemView.getContext().startActivity(intent);
-        });
+        };
+
+        holder.itemView.setOnClickListener(openOrderDetailListener);
+        holder.imgOrderProduct.setOnClickListener(openOrderDetailListener);
     }
 
     @Override
