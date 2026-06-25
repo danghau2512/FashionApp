@@ -8,6 +8,7 @@ public class OrderItemResponse {
     private Long productId;
     private Long variantId;
     private String productName;
+    private String productImageUrl;
     private String size;
     private String color;
     private BigDecimal price;
@@ -15,12 +16,13 @@ public class OrderItemResponse {
     private BigDecimal subtotal;
 
     public OrderItemResponse(Long id, Long productId, Long variantId,
-                             String productName, String size, String color,
+                             String productName, String productImageUrl, String size, String color,
                              BigDecimal price, Integer quantity, BigDecimal subtotal) {
         this.id = id;
         this.productId = productId;
         this.variantId = variantId;
         this.productName = productName;
+        this.productImageUrl = productImageUrl;
         this.size = size;
         this.color = color;
         this.price = price;
@@ -42,6 +44,9 @@ public class OrderItemResponse {
 
     public String getProductName() {
         return productName;
+    }
+    public String getProductImageUrl() {
+        return productImageUrl;
     }
 
     public String getSize() {

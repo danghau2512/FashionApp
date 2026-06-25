@@ -12,6 +12,8 @@ public class OrderSummary {
     private String orderStatus;
     private String createdAt;
 
+    private String productImageUrl;
+
     public Long getId() {
         return id;
     }
@@ -42,5 +44,8 @@ public class OrderSummary {
 
     public String getCreatedAt() {
         return createdAt;
+    }
+    public String getProductImageUrl() {
+        return productImageUrl;
     }
 }

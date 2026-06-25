@@ -19,9 +19,6 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
 
-        <activity
-            android:name=".activity.ProfileActivity"
-            android:exported="false" />
 
         <activity
             android:name=".activity.EditProfileActivity"
@@ -77,6 +74,14 @@
         <activity
             android:name=".activity.AdminStatisticsActivity"
             android:exported="false" />
+        <activity
+            android:name=".activity.OrderDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.OrderHistoryActivity"
+            android:exported="false" />
+
         <activity
             android:name=".activity.AdminDashboardActivity"
             android:exported="false" />

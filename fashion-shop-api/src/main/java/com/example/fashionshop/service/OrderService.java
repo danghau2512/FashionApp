@@ -166,7 +166,7 @@ public class OrderService {
     }
 
     private OrderSummaryResponse toOrderSummaryResponse(ShopOrder order) {
-        return new OrderSummaryResponse(
+        OrderSummaryResponse response = new OrderSummaryResponse(
                 order.getId(),
                 order.getUser().getId(),
                 order.getReceiverName(),
@@ -176,6 +176,18 @@ public class OrderService {
                 order.getOrderStatus(),
                 order.getCreatedAt()
         );
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(order.getId());
+
+        if (orderItems != null && !orderItems.isEmpty()) {
+            OrderItem firstItem = orderItems.get(0);
+
+            if (firstItem.getProduct() != null) {
+                response.setProductImageUrl(firstItem.getProduct().getImageUrl());
+            }
+        }
+
+        return response;
     }
     @Transactional
     public OrderResponse cancelOrder(Long orderId) {
@@ -243,11 +255,25 @@ public class OrderService {
                 item.getProduct() != null ? item.getProduct().getId() : null,
                 item.getVariant() != null ? item.getVariant().getId() : null,
                 item.getProductName(),
+                getOrderItemImageUrl(item),
                 item.getSize(),
                 item.getColor(),
                 item.getPrice(),
                 item.getQuantity(),
                 item.getSubtotal()
         );
+    }
+    private String getOrderItemImageUrl(OrderItem item) {
+        if (item.getVariant() != null
+                && item.getVariant().getImageUrl() != null
+                && !item.getVariant().getImageUrl().isBlank()) {
+            return item.getVariant().getImageUrl();
+        }
+
+        if (item.getProduct() != null) {
+            return item.getProduct().getImageUrl();
+        }
+
+        return null;
     }
 }
