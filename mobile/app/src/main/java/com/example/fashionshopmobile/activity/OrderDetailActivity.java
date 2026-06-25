@@ -14,11 +14,18 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fashionshopmobile.R;
 import com.example.fashionshopmobile.adapter.OrderDetailProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
+import com.example.fashionshopmobile.model.OrderItemResponse;
 import com.example.fashionshopmobile.model.OrderResponse;
+import com.example.fashionshopmobile.model.ReviewEligibility;
+import com.example.fashionshopmobile.model.ReviewableOrderItem;
+import com.example.fashionshopmobile.utils.SessionManager;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -36,6 +43,8 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private OrderDetailProductAdapter productAdapter;
     private Long orderId;
+    private SessionManager sessionManager;
+    private boolean firstResume = true;
 
     private final NumberFormat priceFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
 
@@ -43,6 +52,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_detail);
+        sessionManager = new SessionManager(this);
 
         orderId = getIntent().getLongExtra("order_id", -1);
 
@@ -127,7 +137,17 @@ public class OrderDetailActivity extends AppCompatActivity {
         tvDiscountAmount.setText("Giảm giá: " + formatPrice(order.getDiscountAmount()));
         tvTotalAmount.setText("Tổng tiền: " + formatPrice(order.getTotalAmount()));
 
+        boolean canReviewOrder = isReviewableOrderStatus(order.getOrderStatus());
+
         productAdapter.setData(order.getItems());
+
+        if (canReviewOrder) {
+            productAdapter.setReviewState(true, false, new HashSet<>());
+            loadReviewStateForOrderItems(order.getItems());
+        } else {
+            productAdapter.setReviewState(false, true, new HashSet<>());
+        }
+
         updateCancelButton(order);
 
         if (order.getItems() == null || order.getItems().isEmpty()) {
@@ -135,6 +155,10 @@ public class OrderDetailActivity extends AppCompatActivity {
         } else {
             tvEmptyOrderItems.setVisibility(View.GONE);
         }
+    }
+
+    private boolean isReviewableOrderStatus(String status) {
+        return "DELIVERED".equals(status) || "COMPLETED".equals(status);
     }
 
     private void updateCancelButton(OrderResponse order) {
@@ -273,5 +297,82 @@ public class OrderDetailActivity extends AppCompatActivity {
         }
 
         return status;
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (firstResume) {
+            firstResume = false;
+            return;
+        }
+
+        loadOrderDetail();
+    }
+
+    private void loadReviewStateForOrderItems(List<OrderItemResponse> items) {
+        Long userId = sessionManager.getUserId();
+
+        if (userId == null || items == null || items.isEmpty()) {
+            productAdapter.setReviewState(false, true, new HashSet<>());
+            return;
+        }
+
+        Set<Long> productIds = new HashSet<>();
+        Set<Long> currentOrderItemIds = new HashSet<>();
+
+        for (OrderItemResponse item : items) {
+            if (item.getProductId() != null) {
+                productIds.add(item.getProductId());
+            }
+
+            if (item.getId() != null) {
+                currentOrderItemIds.add(item.getId());
+            }
+        }
+
+        if (productIds.isEmpty()) {
+            productAdapter.setReviewState(false, true, new HashSet<>());
+            return;
+        }
+
+        Set<Long> reviewableOrderItemIds = new HashSet<>();
+        int[] remainingRequestCount = {productIds.size()};
+
+        for (Long productId : productIds) {
+            ApiClient.getApiService().getReviewEligibility(productId, userId)
+                    .enqueue(new Callback<ReviewEligibility>() {
+                        @Override
+                        public void onResponse(Call<ReviewEligibility> call, Response<ReviewEligibility> response) {
+                            if (response.isSuccessful()
+                                    && response.body() != null
+                                    && response.body().getReviewableOrderItems() != null) {
+
+                                for (ReviewableOrderItem reviewableItem : response.body().getReviewableOrderItems()) {
+                                    Long orderItemId = reviewableItem.getOrderItemId();
+
+                                    if (orderItemId != null && currentOrderItemIds.contains(orderItemId)) {
+                                        reviewableOrderItemIds.add(orderItemId);
+                                    }
+                                }
+                            }
+
+                            finishOneReviewStateRequest(remainingRequestCount, reviewableOrderItemIds);
+                        }
+
+                        @Override
+                        public void onFailure(Call<ReviewEligibility> call, Throwable t) {
+                            finishOneReviewStateRequest(remainingRequestCount, reviewableOrderItemIds);
+                        }
+                    });
+        }
+    }
+
+    private void finishOneReviewStateRequest(int[] remainingRequestCount, Set<Long> reviewableOrderItemIds) {
+        remainingRequestCount[0]--;
+
+        if (remainingRequestCount[0] == 0) {
+            productAdapter.setReviewState(true, true, reviewableOrderItemIds);
+        }
     }
 }
