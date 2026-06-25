@@ -1,10 +1,16 @@
 package com.example.fashionshopmobile.activity;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RatingBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,12 +22,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fashionshopmobile.R;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
+import com.example.fashionshopmobile.adapter.ProductReviewAdapter;
 import com.example.fashionshopmobile.adapter.ProductVariantAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Product;
+import com.example.fashionshopmobile.model.ProductReview;
 import com.example.fashionshopmobile.model.ProductVariant;
+import com.example.fashionshopmobile.model.ReviewEligibility;
+import com.example.fashionshopmobile.model.ReviewableOrderItem;
 import com.example.fashionshopmobile.request.AddCartRequest;
+import com.example.fashionshopmobile.request.CreateProductReviewRequest;
 import com.example.fashionshopmobile.utils.ImageUrlUtils;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.android.material.button.MaterialButton;
@@ -59,20 +70,28 @@ public class ProductDetailActivity extends AppCompatActivity {
     private TextView txtDetailMessage;
     private TextView txtRelatedMessage;
 
+    private TextView txtReviewSummary;
+    private TextView txtReviewEligibility;
+    private TextView txtReviewMessage;
+
+    private MaterialButton btnWriteReview;
     private MaterialButton btnAddToCart;
     private MaterialButton btnBuyNow;
 
     private RecyclerView recyclerVariants;
     private RecyclerView recyclerRelatedProducts;
+    private RecyclerView recyclerReviews;
 
     private ProductVariantAdapter variantAdapter;
     private ProductAdapter relatedProductAdapter;
+    private ProductReviewAdapter productReviewAdapter;
 
     private SessionManager sessionManager;
 
     private Long productId;
     private Product currentProduct;
     private ProductVariant selectedVariant;
+    private ReviewEligibility currentReviewEligibility;
 
     private int quantity = 1;
 
@@ -89,6 +108,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         initViews();
         setupVariantRecyclerView();
         setupRelatedProductRecyclerView();
+        setupReviewRecyclerView();
         setupClickEvents();
 
         if (productId == -1) {
@@ -98,13 +118,20 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         loadProductDetail();
         loadProductVariants();
+        loadProductReviews();
+        loadReviewEligibility();
         loadCartCount();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
         loadCartCount();
+
+        if (productId != null && productId != -1) {
+            loadReviewEligibility();
+        }
     }
 
     private void initViews() {
@@ -134,6 +161,12 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         recyclerVariants = findViewById(R.id.recyclerVariants);
         recyclerRelatedProducts = findViewById(R.id.recyclerRelatedProducts);
+
+        txtReviewSummary = findViewById(R.id.txtReviewSummary);
+        txtReviewEligibility = findViewById(R.id.txtReviewEligibility);
+        txtReviewMessage = findViewById(R.id.txtReviewMessage);
+        btnWriteReview = findViewById(R.id.btnWriteReview);
+        recyclerReviews = findViewById(R.id.recyclerReviews);
     }
 
     private void setupVariantRecyclerView() {
@@ -156,7 +189,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         recyclerVariants.setLayoutManager(
                 new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         );
-
         recyclerVariants.setAdapter(variantAdapter);
     }
 
@@ -169,6 +201,12 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         recyclerRelatedProducts.setLayoutManager(new GridLayoutManager(this, 2));
         recyclerRelatedProducts.setAdapter(relatedProductAdapter);
+    }
+
+    private void setupReviewRecyclerView() {
+        productReviewAdapter = new ProductReviewAdapter();
+        recyclerReviews.setLayoutManager(new LinearLayoutManager(this));
+        recyclerReviews.setAdapter(productReviewAdapter);
     }
 
     private void setupClickEvents() {
@@ -190,6 +228,8 @@ public class ProductDetailActivity extends AppCompatActivity {
                 Toast.makeText(this, "Mua ngay sẽ làm ở module thanh toán", Toast.LENGTH_SHORT).show();
             }
         });
+
+        btnWriteReview.setOnClickListener(v -> showReviewDialog());
     }
 
     private void loadProductDetail() {
@@ -566,6 +606,272 @@ public class ProductDetailActivity extends AppCompatActivity {
         }
     }
 
+    private void loadProductReviews() {
+        if (productId == null || productId == -1) {
+            return;
+        }
+
+        ApiClient.getApiService().getProductReviews(productId).enqueue(new Callback<List<ProductReview>>() {
+            @Override
+            public void onResponse(Call<List<ProductReview>> call, Response<List<ProductReview>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<ProductReview> reviews = response.body();
+                    productReviewAdapter.setData(reviews);
+
+                    if (reviews.isEmpty()) {
+                        txtReviewMessage.setText("Chưa có đánh giá nào cho sản phẩm này");
+                    } else {
+                        txtReviewMessage.setText("");
+                    }
+                } else {
+                    txtReviewMessage.setText("Không lấy được danh sách đánh giá");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<ProductReview>> call, Throwable t) {
+                txtReviewMessage.setText("Lỗi API đánh giá: " + t.getMessage());
+            }
+        });
+    }
+
+    private void loadReviewEligibility() {
+        Long userId = sessionManager.getUserId();
+
+        if (productId == null || productId == -1) {
+            return;
+        }
+
+        if (userId == null) {
+            currentReviewEligibility = null;
+            txtReviewSummary.setText("Chưa có đánh giá");
+            txtReviewEligibility.setText("Đăng nhập và mua hàng thành công để đánh giá sản phẩm");
+            btnWriteReview.setVisibility(View.GONE);
+            return;
+        }
+
+        ApiClient.getApiService().getReviewEligibility(productId, userId).enqueue(new Callback<ReviewEligibility>() {
+            @Override
+            public void onResponse(Call<ReviewEligibility> call, Response<ReviewEligibility> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    currentReviewEligibility = response.body();
+                    updateReviewEligibilityView(currentReviewEligibility);
+                } else {
+                    currentReviewEligibility = null;
+                    txtReviewEligibility.setText("Không kiểm tra được quyền đánh giá");
+                    btnWriteReview.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ReviewEligibility> call, Throwable t) {
+                currentReviewEligibility = null;
+                txtReviewEligibility.setText("Lỗi kiểm tra quyền đánh giá: " + t.getMessage());
+                btnWriteReview.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private void updateReviewEligibilityView(ReviewEligibility eligibility) {
+        double avg = eligibility.getAverageRating() == null ? 0 : eligibility.getAverageRating();
+        long count = eligibility.getReviewCount() == null ? 0 : eligibility.getReviewCount();
+
+        if (count > 0) {
+            txtReviewSummary.setText(String.format(Locale.getDefault(), "%.1f ★ (%d)", avg, count));
+        } else {
+            txtReviewSummary.setText("Chưa có đánh giá");
+        }
+
+        if (eligibility.isCanReview()) {
+            txtReviewEligibility.setText(
+                    "Bạn còn " + eligibility.getAvailableReviewCount() + " lượt đánh giá cho sản phẩm này"
+            );
+            btnWriteReview.setVisibility(View.VISIBLE);
+        } else {
+            txtReviewEligibility.setText(
+                    "Bạn chỉ được đánh giá khi đã mua sản phẩm và đơn hàng đã thành công"
+            );
+            btnWriteReview.setVisibility(View.GONE);
+        }
+    }
+
+    private void showReviewDialog() {
+        Long userId = sessionManager.getUserId();
+
+        if (userId == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập để đánh giá", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(ProductDetailActivity.this, LoginActivity.class));
+            return;
+        }
+
+        if (currentReviewEligibility == null
+                || currentReviewEligibility.getReviewableOrderItems() == null
+                || currentReviewEligibility.getReviewableOrderItems().isEmpty()) {
+            Toast.makeText(this, "Bạn chưa có lượt mua hợp lệ để đánh giá", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<ReviewableOrderItem> reviewableItems = currentReviewEligibility.getReviewableOrderItems();
+        List<String> labels = new ArrayList<>();
+
+        for (ReviewableOrderItem item : reviewableItems) {
+            labels.add(buildReviewableItemLabel(item));
+        }
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int padding = dpToPx(20);
+        layout.setPadding(padding, padding, padding, 0);
+
+        TextView txtChooseOrderItem = new TextView(this);
+        txtChooseOrderItem.setText("Chọn lượt mua muốn đánh giá");
+        txtChooseOrderItem.setTextSize(14);
+        layout.addView(txtChooseOrderItem);
+
+        Spinner spinnerOrderItem = new Spinner(this);
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                labels
+        );
+        spinnerOrderItem.setAdapter(spinnerAdapter);
+        layout.addView(spinnerOrderItem);
+
+        TextView txtRatingLabel = new TextView(this);
+        txtRatingLabel.setText("Số sao");
+        txtRatingLabel.setTextSize(14);
+        txtRatingLabel.setPadding(0, dpToPx(12), 0, 0);
+        layout.addView(txtRatingLabel);
+
+        final int[] selectedRating = {5};
+
+        LinearLayout starLayout = new LinearLayout(this);
+        starLayout.setOrientation(LinearLayout.HORIZONTAL);
+        starLayout.setPadding(0, dpToPx(6), 0, dpToPx(6));
+
+        List<TextView> starViews = new ArrayList<>();
+
+        for (int i = 1; i <= 5; i++) {
+            TextView star = new TextView(this);
+            star.setText("★");
+            star.setTextSize(30);
+            star.setPadding(dpToPx(4), 0, dpToPx(4), 0);
+
+            int ratingValue = i;
+
+            star.setOnClickListener(v -> {
+                selectedRating[0] = ratingValue;
+                updateStarViews(starViews, selectedRating[0]);
+            });
+
+            starViews.add(star);
+            starLayout.addView(star);
+        }
+
+        layout.addView(starLayout);
+        updateStarViews(starViews, selectedRating[0]);
+
+        EditText edtComment = new EditText(this);
+        edtComment.setHint("Nhập nội dung đánh giá");
+        edtComment.setMinLines(3);
+        edtComment.setMaxLines(5);
+        edtComment.setSingleLine(false);
+        layout.addView(edtComment);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Đánh giá sản phẩm")
+                .setView(layout)
+                .setNegativeButton("Hủy", null)
+                .setPositiveButton("Gửi đánh giá", null)
+                .create();
+
+        dialog.setOnShowListener(dialogInterface ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    int selectedPosition = spinnerOrderItem.getSelectedItemPosition();
+
+                    if (selectedPosition < 0 || selectedPosition >= reviewableItems.size()) {
+                        Toast.makeText(this, "Vui lòng chọn lượt mua", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    ReviewableOrderItem selectedItem = reviewableItems.get(selectedPosition);
+                    int rating = selectedRating[0];
+                    String comment = edtComment.getText().toString().trim();
+
+                    if (rating < 1 || rating > 5) {
+                        Toast.makeText(this, "Vui lòng chọn số sao từ 1 đến 5", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    submitReview(dialog, userId, selectedItem.getOrderItemId(), rating, comment);
+                })
+        );
+
+        dialog.show();
+    }
+
+    private void submitReview(AlertDialog dialog, Long userId, Long orderItemId, int rating, String comment) {
+        CreateProductReviewRequest request = new CreateProductReviewRequest(
+                userId,
+                productId,
+                orderItemId,
+                rating,
+                comment
+        );
+
+        ApiClient.getApiService().createProductReview(request).enqueue(new Callback<ProductReview>() {
+            @Override
+            public void onResponse(Call<ProductReview> call, Response<ProductReview> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Toast.makeText(ProductDetailActivity.this, "Đánh giá thành công", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+
+                    loadProductReviews();
+                    loadReviewEligibility();
+                } else {
+                    Toast.makeText(ProductDetailActivity.this, "Gửi đánh giá thất bại", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ProductReview> call, Throwable t) {
+                Toast.makeText(
+                        ProductDetailActivity.this,
+                        "Lỗi gửi đánh giá: " + t.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
+            }
+        });
+    }
+
+    private String buildReviewableItemLabel(ReviewableOrderItem item) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("Đơn #").append(item.getOrderId() == null ? "" : item.getOrderId());
+
+        if (item.getColor() != null && !item.getColor().trim().isEmpty()) {
+            builder.append(" - ").append(item.getColor());
+        }
+
+        if (item.getSize() != null && !item.getSize().trim().isEmpty()) {
+            builder.append(" / ").append(item.getSize());
+        }
+
+        if (item.getQuantity() != null) {
+            builder.append(" - SL: ").append(item.getQuantity());
+        }
+
+        if (item.getOrderCreatedAt() != null && item.getOrderCreatedAt().length() >= 10) {
+            builder.append(" - ").append(item.getOrderCreatedAt().substring(0, 10));
+        }
+
+        return builder.toString();
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
     private int getStock(ProductVariant variant) {
         if (variant == null || variant.getQuantity() == null) {
             return 0;
@@ -588,5 +894,16 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private void showMessage(String message) {
         txtDetailMessage.setText(message);
+    }
+    private void updateStarViews(List<TextView> starViews, int selectedRating) {
+        for (int i = 0; i < starViews.size(); i++) {
+            TextView star = starViews.get(i);
+
+            if (i < selectedRating) {
+                star.setText("★");
+            } else {
+                star.setText("☆");
+            }
+        }
     }
 }

@@ -9,7 +9,9 @@ import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.OrderResponse;
 import com.example.fashionshopmobile.model.OrderSummary;
 import com.example.fashionshopmobile.model.Product;
+import com.example.fashionshopmobile.model.ProductReview;
 import com.example.fashionshopmobile.model.ProductVariant;
+import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
@@ -18,6 +20,7 @@ import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
 import com.example.fashionshopmobile.request.AdminOrderActionRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
+import com.example.fashionshopmobile.request.CreateProductReviewRequest;
 import com.example.fashionshopmobile.request.ShippingQuoteRequest;
 import com.example.fashionshopmobile.request.UpdateCartItemRequest;
 import com.example.fashionshopmobile.request.UpdateUserRequest;
@@ -202,6 +205,17 @@ public interface ApiService {
             @Query("bestSellerMonths") Integer bestSellerMonths,
             @Query("noSaleMonths") Integer noSaleMonths
     );
+    @GET("api/reviews/product/{productId}")
+    Call<List<ProductReview>> getProductReviews(@Path("productId") Long productId);
+
+    @GET("api/reviews/product/{productId}/eligibility")
+    Call<ReviewEligibility> getReviewEligibility(
+            @Path("productId") Long productId,
+            @Query("userId") Long userId
+    );
+
+    @POST("api/reviews")
+    Call<ProductReview> createProductReview(@Body CreateProductReviewRequest request);
 
     @GET("api/admin/orders")
     Call<List<AdminOrderSummary>> getAdminOrders(
