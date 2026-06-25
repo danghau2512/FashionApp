@@ -54,7 +54,21 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
+            android:exported="true"
+            android:launchMode="singleTop">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="fashionshop"
+                    android:host="home" />
+            </intent-filter>
+
+        </activity>
 
         <activity
             android:name=".activity.StoreMapActivity"
@@ -70,7 +84,20 @@
 
         <activity
             android:name=".activity.OrderSuccessActivity"
-            android:exported="false" />
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="fashionshop"
+                    android:host="order-success" />
+            </intent-filter>
+
+        </activity>
         <activity
             android:name=".activity.AdminStatisticsActivity"
             android:exported="false" />
@@ -121,6 +148,7 @@
         <activity
             android:name=".activity.AdminProductVariantFormActivity"
             android:exported="false" />
+
 
     </application>
 

@@ -103,8 +103,14 @@ public class OrderService {
         order.setShippingFee(shippingFee);
         order.setDiscountAmount(discountAmount);
         order.setTotalAmount(totalAmount);
-        order.setPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "COD");
-        order.setPaymentStatus("UNPAID");
+        String paymentMethod = request.getPaymentMethod() == null ? "COD" : request.getPaymentMethod().trim().toUpperCase();
+
+        if (!"COD".equals(paymentMethod) && !"VNPAY".equals(paymentMethod)) {
+            throw new RuntimeException("Phương thức thanh toán không hợp lệ");
+        }
+
+        order.setPaymentMethod(paymentMethod);
+        order.setPaymentStatus("VNPAY".equals(paymentMethod) ? "PENDING" : "UNPAID");
         order.setOrderStatus("PENDING");
         order.setNote(request.getNote());
 

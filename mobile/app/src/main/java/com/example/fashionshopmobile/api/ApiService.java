@@ -17,6 +17,7 @@ import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.VnPayPaymentResponse;
 import com.example.fashionshopmobile.model.shipping.GhnDistrict;
 import com.example.fashionshopmobile.model.shipping.GhnProvince;
 import com.example.fashionshopmobile.model.shipping.GhnWard;
@@ -150,10 +151,6 @@ public interface ApiService {
 
     @POST("api/orders")
     Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
-
-    @POST("api/shipping/quote")
-    Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
-
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
 
@@ -217,7 +214,8 @@ public interface ApiService {
             @Query("adminId") Long adminId,
             @Body UpdateProductVariantStatusRequest request
     );
-
+    @POST("api/shipping/quote")
+    Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
     @GET("api/admin/statistics")
     Call<AdminStatistics> getAdminStatistics(
             @Query("adminId") Long adminId,

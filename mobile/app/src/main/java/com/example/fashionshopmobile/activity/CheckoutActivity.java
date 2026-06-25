@@ -1,10 +1,13 @@
 package com.example.fashionshopmobile.activity;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,6 +21,7 @@ import com.example.fashionshopmobile.api.ApiClient;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.OrderResponse;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.VnPayPaymentResponse;
 import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
 import com.example.fashionshopmobile.request.ShippingQuoteRequest;
@@ -49,7 +53,8 @@ public class CheckoutActivity extends AppCompatActivity {
     private TextView tvBottomTotal;
     private TextView tvShippingMethod;
     private TextView tvEstimatedDelivery;
-
+    private RadioButton rbCod;
+    private RadioButton rbVnPay;
     private EditText edtCheckoutNote;
     private RecyclerView rvCheckoutProducts;
     private MaterialButton btnPlaceOrder;
@@ -127,6 +132,8 @@ public class CheckoutActivity extends AppCompatActivity {
         btnPlaceOrder = findViewById(R.id.btnPlaceOrder);
         cardCheckoutAddress = findViewById(R.id.cardCheckoutAddress);
         progressCheckout = findViewById(R.id.progressCheckout);
+        rbCod = findViewById(R.id.rbCod);
+        rbVnPay = findViewById(R.id.rbVnPay);
     }
 
     private void setupRecyclerView() {
@@ -464,7 +471,7 @@ public class CheckoutActivity extends AppCompatActivity {
         }
 
         List<Long> cartItemIds = getSelectedCartItemIds();
-
+        String paymentMethod = rbVnPay.isChecked() ? "VNPAY" : "COD";
         CreateOrderRequest request = new CreateOrderRequest(
                 userId,
                 cartItemIds,
@@ -476,7 +483,7 @@ public class CheckoutActivity extends AppCompatActivity {
                 selectedAddress.getDistrictId(),
                 selectedAddress.getWardCode(),
                 shippingFee,
-                "COD",
+                paymentMethod,
                 edtCheckoutNote.getText().toString().trim()
         );
 
@@ -489,7 +496,14 @@ public class CheckoutActivity extends AppCompatActivity {
                 btnPlaceOrder.setText("Đặt hàng");
 
                 if (response.isSuccessful() && response.body() != null) {
-                    openOrderSuccess(response.body());
+                    OrderResponse order = response.body();
+
+                    if ("VNPAY".equals(paymentMethod)) {
+                        createVnPayPayment(order.getId());
+                    } else {
+                        openOrderSuccess(order);
+                    }
+
                     return;
                 }
 
@@ -522,5 +536,41 @@ public class CheckoutActivity extends AppCompatActivity {
         }
 
         return formatter.format(value) + "đ";
+    }
+    private void createVnPayPayment(Long orderId) {
+        btnPlaceOrder.setEnabled(false);
+        btnPlaceOrder.setText("Đang mở VNPAY...");
+
+        ApiClient.getApiService().createVnPayPayment(orderId).enqueue(new Callback<VnPayPaymentResponse>() {
+            @Override
+            public void onResponse(Call<VnPayPaymentResponse> call, Response<VnPayPaymentResponse> response) {
+                if (!response.isSuccessful() || response.body() == null || response.body().getPaymentUrl() == null) {
+                    btnPlaceOrder.setEnabled(true);
+                    btnPlaceOrder.setText("Đặt hàng");
+                    Toast.makeText(CheckoutActivity.this, "Không tạo được đường dẫn VNPAY", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                openVnPayUrl(response.body().getPaymentUrl());
+            }
+
+            @Override
+            public void onFailure(Call<VnPayPaymentResponse> call, Throwable throwable) {
+                btnPlaceOrder.setEnabled(true);
+                btnPlaceOrder.setText("Đặt hàng");
+                Toast.makeText(CheckoutActivity.this, "Lỗi tạo thanh toán: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    private void openVnPayUrl(String paymentUrl) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(paymentUrl));
+            startActivity(intent);
+            finish();
+        } catch (ActivityNotFoundException exception) {
+            btnPlaceOrder.setEnabled(true);
+            btnPlaceOrder.setText("Đặt hàng");
+            Toast.makeText(this, "Không tìm thấy trình duyệt", Toast.LENGTH_LONG).show();
+        }
     }
 }
