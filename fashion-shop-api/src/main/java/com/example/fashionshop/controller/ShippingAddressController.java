@@ -1,15 +1,15 @@
 package com.example.fashionshop.controller;
 
+import com.example.fashionshop.dto.ShippingQuoteRequest;
+import com.example.fashionshop.dto.ShippingQuoteResponse;
 import com.example.fashionshop.integration.ghn.dto.GhnDistrict;
 import com.example.fashionshop.integration.ghn.dto.GhnProvince;
 import com.example.fashionshop.integration.ghn.dto.GhnWard;
 import com.example.fashionshop.integration.ghn.service.GhnAddressService;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.fashionshop.integration.ghn.service.GhnShippingService;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,11 +19,10 @@ import java.util.List;
 public class ShippingAddressController {
 
     private final GhnAddressService ghnAddressService;
-
-    public ShippingAddressController(
-            GhnAddressService ghnAddressService
-    ) {
+    private final GhnShippingService ghnShippingService;
+    public ShippingAddressController(GhnAddressService ghnAddressService, GhnShippingService ghnShippingService) {
         this.ghnAddressService = ghnAddressService;
+        this.ghnShippingService = ghnShippingService;
     }
 
     @GetMapping("/provinces")
@@ -43,5 +42,11 @@ public class ShippingAddressController {
             @RequestParam Integer districtId
     ) {
         return ghnAddressService.getWards(districtId);
+    }
+    @PostMapping("/quote")
+        public ShippingQuoteResponse getShippingQuote(
+            @Valid @RequestBody ShippingQuoteRequest request
+    ) {
+        return ghnShippingService.getQuote(request);
     }
 }

@@ -1,6 +1,8 @@
 package com.example.fashionshopmobile.api;
 
 import com.example.fashionshopmobile.model.AdminDashboard;
+import com.example.fashionshopmobile.model.AdminOrderDetail;
+import com.example.fashionshopmobile.model.AdminOrderSummary;
 import com.example.fashionshopmobile.model.AdminStatistics;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
@@ -13,16 +15,25 @@ import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
+import com.example.fashionshopmobile.request.AdminOrderActionRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
 import com.example.fashionshopmobile.request.CreateProductReviewRequest;
+import com.example.fashionshopmobile.request.ShippingQuoteRequest;
 import com.example.fashionshopmobile.request.UpdateCartItemRequest;
 import com.example.fashionshopmobile.request.UpdateUserRequest;
 import com.example.fashionshopmobile.request.UserSyncRequest;
 import com.example.fashionshopmobile.model.shipping.GhnDistrict;
 import com.example.fashionshopmobile.model.shipping.GhnProvince;
 import com.example.fashionshopmobile.model.shipping.GhnWard;
+import com.example.fashionshopmobile.model.AdminProductResponse;
+import com.example.fashionshopmobile.request.AdminProductRequest;
+import com.example.fashionshopmobile.request.UpdateProductStatusRequest;
+import com.example.fashionshopmobile.model.AdminProductVariantResponse;
+import com.example.fashionshopmobile.request.AdminProductVariantRequest;
+import com.example.fashionshopmobile.request.UpdateProductVariantStatusRequest;
 import java.util.List;
 
 import retrofit2.Call;
@@ -124,6 +135,69 @@ public interface ApiService {
     Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
+
+    @GET("api/admin/products")
+    Call<List<AdminProductResponse>> getAdminProducts(
+            @Query("keyword") String keyword,
+            @Query("status") String status,
+            @Query("categoryId") Long categoryId
+    );
+
+    @GET("api/admin/products/{id}")
+    Call<AdminProductResponse> getAdminProductById(@Path("id") Long id);
+
+    @POST("api/admin/products")
+    Call<AdminProductResponse> createAdminProduct(
+            @Query("adminId") Long adminId,
+            @Body AdminProductRequest request
+    );
+
+    @PUT("api/admin/products/{id}")
+    Call<AdminProductResponse> updateAdminProduct(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminProductRequest request
+    );
+
+    @PUT("api/admin/products/{id}/status")
+    Call<AdminProductResponse> updateAdminProductStatus(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body UpdateProductStatusRequest request
+    );
+
+    @GET("api/admin/products/{productId}/variants")
+    Call<List<AdminProductVariantResponse>> getAdminProductVariants(
+            @Path("productId") Long productId
+    );
+
+    @GET("api/admin/variants/{id}")
+    Call<AdminProductVariantResponse> getAdminProductVariantById(
+            @Path("id") Long id
+    );
+
+    @POST("api/admin/products/{productId}/variants")
+    Call<AdminProductVariantResponse> createAdminProductVariant(
+            @Path("productId") Long productId,
+            @Query("adminId") Long adminId,
+            @Body AdminProductVariantRequest request
+    );
+
+    @PUT("api/admin/variants/{id}")
+    Call<AdminProductVariantResponse> updateAdminProductVariant(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminProductVariantRequest request
+    );
+
+    @PUT("api/admin/variants/{id}/status")
+    Call<AdminProductVariantResponse> updateAdminProductVariantStatus(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body UpdateProductVariantStatusRequest request
+    );
+    @POST("api/shipping/quote")
+    Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
     @GET("api/admin/statistics")
     Call<AdminStatistics> getAdminStatistics(
             @Query("adminId") Long adminId,
@@ -142,4 +216,28 @@ public interface ApiService {
 
     @POST("api/reviews")
     Call<ProductReview> createProductReview(@Body CreateProductReviewRequest request);
+
+    @GET("api/admin/orders")
+    Call<List<AdminOrderSummary>> getAdminOrders(
+            @Query("keyword") String keyword,
+            @Query("status") String status
+    );
+
+    @GET("api/admin/orders/{orderId}")
+    Call<AdminOrderDetail> getAdminOrderDetail(
+            @Path("orderId") Long orderId
+    );
+
+    @PUT("api/admin/orders/{orderId}/confirm")
+    Call<AdminOrderDetail> confirmAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
+    @PUT("api/admin/orders/{orderId}/cancel-by-admin")
+    Call<AdminOrderDetail> cancelAdminOrder(
+            @Path("orderId") Long orderId,
+            @Body AdminOrderActionRequest request
+    );
+
 }

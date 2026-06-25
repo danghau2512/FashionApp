@@ -12,9 +12,12 @@ public class CreateOrderRequest {
     private String deliveryAddress;
     private BigDecimal deliveryLatitude;
     private BigDecimal deliveryLongitude;
+    private Integer deliveryDistrictId;
+    private String deliveryWardCode;
     private BigDecimal shippingFee;
     private String paymentMethod;
     private String note;
+
 
     public CreateOrderRequest(Long userId,
                               List<Long> cartItemIds,
@@ -23,6 +26,8 @@ public class CreateOrderRequest {
                               String deliveryAddress,
                               BigDecimal deliveryLatitude,
                               BigDecimal deliveryLongitude,
+                              Integer deliveryDistrictId,
+                              String deliveryWardCode,
                               BigDecimal shippingFee,
                               String paymentMethod,
                               String note) {
@@ -33,6 +38,8 @@ public class CreateOrderRequest {
         this.deliveryAddress = deliveryAddress;
         this.deliveryLatitude = deliveryLatitude;
         this.deliveryLongitude = deliveryLongitude;
+        this.deliveryDistrictId = deliveryDistrictId;
+        this.deliveryWardCode = deliveryWardCode;
         this.shippingFee = shippingFee;
         this.paymentMethod = paymentMethod;
         this.note = note;
