@@ -36,6 +36,12 @@ import com.example.fashionshopmobile.request.AdminProductVariantRequest;
 import com.example.fashionshopmobile.request.UpdateProductVariantStatusRequest;
 import java.util.List;
 
+import com.example.fashionshopmobile.model.ImageUploadResponse;
+
+import okhttp3.MultipartBody;
+import retrofit2.http.Multipart;
+import retrofit2.http.Part;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -243,6 +249,13 @@ public interface ApiService {
     Call<AdminOrderDetail> cancelAdminOrder(
             @Path("orderId") Long orderId,
             @Body AdminOrderActionRequest request
+    );
+
+    @Multipart
+    @POST("api/admin/uploads/images")
+    Call<ImageUploadResponse> uploadAdminImage(
+            @Query("adminId") Long adminId,
+            @Part MultipartBody.Part file
     );
 
 }
