@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
+    private static final String STATUS_LOCKED = "LOCKED";
+
     private final UserRepository userRepository;
 
     public UserService(UserRepository userRepository) {
@@ -20,12 +22,25 @@ public class UserService {
         User user = userRepository.findByFirebaseUid(request.getFirebaseUid())
                 .orElse(null);
 
+        if (user == null && request.getEmail() != null) {
+            user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
+                    .orElse(null);
+
+            if (user != null) {
+                user.setFirebaseUid(request.getFirebaseUid());
+            }
+        }
+
         if (user == null) {
             user = new User();
             user.setFirebaseUid(request.getFirebaseUid());
-            user.setEmail(request.getEmail());
+            user.setEmail(request.getEmail() == null ? null : request.getEmail().trim().toLowerCase());
             user.setRole("CUSTOMER");
             user.setStatus("ACTIVE");
+        }
+
+        if (STATUS_LOCKED.equalsIgnoreCase(user.getStatus())) {
+            throw new RuntimeException("Tài khoản đã bị khóa");
         }
 
         user.setFullName(request.getFullName());

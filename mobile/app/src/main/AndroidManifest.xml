@@ -109,6 +109,19 @@
             android:name=".activity.OrderHistoryActivity"
             android:exported="false" />
 
+
+        <activity
+            android:name=".activity.AdminUserListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AdminUserDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.AdminUserFormActivity"
+            android:exported="false" />
+
         <activity
             android:name=".activity.AdminDashboardActivity"
             android:exported="false" />

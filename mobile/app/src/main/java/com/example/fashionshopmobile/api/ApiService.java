@@ -6,6 +6,7 @@ import com.example.fashionshopmobile.model.AdminOrderSummary;
 import com.example.fashionshopmobile.model.AdminProductResponse;
 import com.example.fashionshopmobile.model.AdminProductVariantResponse;
 import com.example.fashionshopmobile.model.AdminStatistics;
+import com.example.fashionshopmobile.model.AdminUser;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
 import com.example.fashionshopmobile.model.OrderResponse;
@@ -25,6 +26,8 @@ import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
 import com.example.fashionshopmobile.request.AdminOrderActionRequest;
+import com.example.fashionshopmobile.request.AdminUserRequest;
+import com.example.fashionshopmobile.request.AdminUserStatusRequest;
 import com.example.fashionshopmobile.request.AdminProductRequest;
 import com.example.fashionshopmobile.request.AdminProductVariantRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
@@ -291,6 +294,37 @@ public interface ApiService {
     Call<OrderResponse> completeOrder(
             @Path("orderId") Long orderId,
             @Query("userId") Long userId
+    );
+
+
+    @GET("api/admin/users")
+    Call<List<AdminUser>> getAdminUsers(
+            @Query("keyword") String keyword,
+            @Query("role") String role,
+            @Query("status") String status
+    );
+
+    @GET("api/admin/users/{id}")
+    Call<AdminUser> getAdminUserById(@Path("id") Long id);
+
+    @POST("api/admin/users")
+    Call<AdminUser> createAdminUser(
+            @Query("adminId") Long adminId,
+            @Body AdminUserRequest request
+    );
+
+    @PUT("api/admin/users/{id}")
+    Call<AdminUser> updateAdminUser(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminUserRequest request
+    );
+
+    @PUT("api/admin/users/{id}/status")
+    Call<AdminUser> updateAdminUserStatus(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminUserStatusRequest request
     );
 
 }
