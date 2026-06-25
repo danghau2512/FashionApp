@@ -24,6 +24,26 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import android.net.Uri;
+import android.webkit.MimeTypeMap;
+import android.widget.ImageView;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.bumptech.glide.Glide;
+import com.example.fashionshopmobile.model.ImageUploadResponse;
+import com.example.fashionshopmobile.utils.ImageUrlUtils;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+
 public class AdminProductFormActivity extends AppCompatActivity {
 
     private TextView btnBack;
@@ -31,6 +51,10 @@ public class AdminProductFormActivity extends AppCompatActivity {
     private TextView btnSave;
     private TextView btnCancel;
     private TextView txtMessage;
+    private TextView btnChooseImage;
+    private ImageView imgPreview;
+    private ActivityResultLauncher<String> imagePickerLauncher;
+    private Uri selectedImageUri;
 
     private EditText edtName;
     private EditText edtDescription;
@@ -74,6 +98,7 @@ public class AdminProductFormActivity extends AppCompatActivity {
         editMode = productId != null && productId > 0;
 
         initViews();
+        setupImagePicker();
         setupStaticSpinners();
         setupEvents();
 
@@ -88,6 +113,8 @@ public class AdminProductFormActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btnSaveAdminProduct);
         btnCancel = findViewById(R.id.btnCancelAdminProductForm);
         txtMessage = findViewById(R.id.txtAdminProductFormMessage);
+        btnChooseImage = findViewById(R.id.btnChooseAdminProductImage);
+        imgPreview = findViewById(R.id.imgAdminProductPreview);
 
         edtName = findViewById(R.id.edtAdminProductName);
         edtDescription = findViewById(R.id.edtAdminProductDescription);
@@ -123,6 +150,8 @@ public class AdminProductFormActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnCancel.setOnClickListener(v -> finish());
         btnSave.setOnClickListener(v -> saveProduct());
+
+        btnChooseImage.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
     }
 
     private void loadCategories() {
@@ -197,6 +226,11 @@ public class AdminProductFormActivity extends AppCompatActivity {
         edtPrice.setText(product.getPrice() != null ? product.getPrice().toPlainString() : "");
         edtSalePrice.setText(product.getSalePrice() != null ? product.getSalePrice().toPlainString() : "");
         edtImageUrl.setText(product.getImageUrl());
+        Glide.with(this)
+                .load(ImageUrlUtils.getFullImageUrl(product.getImageUrl()))
+                .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher)
+                .into(imgPreview);
         edtBrand.setText(product.getBrand());
 
         selectCategory(product.getCategoryId());
@@ -298,18 +332,6 @@ public class AdminProductFormActivity extends AppCompatActivity {
         String gender = genderValues[spinnerGender.getSelectedItemPosition()];
         String status = statusValues[spinnerStatus.getSelectedItemPosition()];
 
-        AdminProductRequest request = new AdminProductRequest(
-                categoryId,
-                name,
-                description,
-                price,
-                salePrice,
-                imageUrl,
-                brand,
-                gender,
-                status
-        );
-
         Long adminId = sessionManager.getUserId();
 
         if (adminId == null) {
@@ -318,12 +340,39 @@ public class AdminProductFormActivity extends AppCompatActivity {
         }
 
         btnSave.setEnabled(false);
-        txtMessage.setText("Đang lưu sản phẩm...");
 
-        if (editMode) {
-            updateProduct(adminId, request);
+        if (selectedImageUri != null) {
+            uploadSelectedImageThenSave(
+                    adminId,
+                    categoryId,
+                    name,
+                    description,
+                    price,
+                    salePrice,
+                    brand,
+                    gender,
+                    status
+            );
         } else {
-            createProduct(adminId, request);
+            AdminProductRequest request = new AdminProductRequest(
+                    categoryId,
+                    name,
+                    description,
+                    price,
+                    salePrice,
+                    imageUrl,
+                    brand,
+                    gender,
+                    status
+            );
+
+            txtMessage.setText("Đang lưu sản phẩm...");
+
+            if (editMode) {
+                updateProduct(adminId, request);
+            } else {
+                createProduct(adminId, request);
+            }
         }
     }
 
@@ -379,5 +428,131 @@ public class AdminProductFormActivity extends AppCompatActivity {
                         txtMessage.setText("Lỗi API: " + t.getMessage());
                     }
                 });
+    }
+
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        selectedImageUri = uri;
+
+                        Glide.with(this)
+                                .load(uri)
+                                .placeholder(R.mipmap.ic_launcher)
+                                .error(R.mipmap.ic_launcher)
+                                .into(imgPreview);
+
+                        txtMessage.setText("Đã chọn ảnh. Ảnh sẽ được upload khi bấm Lưu.");
+                    }
+                }
+        );
+    }
+    private void uploadSelectedImageThenSave(Long adminId,
+                                             Long categoryId,
+                                             String name,
+                                             String description,
+                                             BigDecimal price,
+                                             BigDecimal salePrice,
+                                             String brand,
+                                             String gender,
+                                             String status) {
+        if (selectedImageUri == null) {
+            txtMessage.setText("Chưa chọn ảnh để upload");
+            btnSave.setEnabled(true);
+            return;
+        }
+
+        try {
+            MultipartBody.Part imagePart = createImagePart(selectedImageUri);
+
+            txtMessage.setText("Đang upload ảnh...");
+
+            ApiClient.getApiService()
+                    .uploadAdminImage(adminId, imagePart)
+                    .enqueue(new Callback<ImageUploadResponse>() {
+                        @Override
+                        public void onResponse(Call<ImageUploadResponse> call,
+                                               Response<ImageUploadResponse> response) {
+                            if (response.isSuccessful()
+                                    && response.body() != null
+                                    && response.body().getImageUrl() != null) {
+
+                                String newImageUrl = response.body().getImageUrl();
+                                edtImageUrl.setText(newImageUrl);
+
+                                AdminProductRequest request = new AdminProductRequest(
+                                        categoryId,
+                                        name,
+                                        description,
+                                        price,
+                                        salePrice,
+                                        newImageUrl,
+                                        brand,
+                                        gender,
+                                        status
+                                );
+
+                                txtMessage.setText("Upload ảnh thành công. Đang lưu sản phẩm...");
+
+                                if (editMode) {
+                                    updateProduct(adminId, request);
+                                } else {
+                                    createProduct(adminId, request);
+                                }
+                            } else {
+                                btnSave.setEnabled(true);
+                                txtMessage.setText("Upload ảnh thất bại");
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<ImageUploadResponse> call, Throwable t) {
+                            btnSave.setEnabled(true);
+                            txtMessage.setText("Lỗi upload ảnh: " + t.getMessage());
+                        }
+                    });
+
+        } catch (Exception e) {
+            btnSave.setEnabled(true);
+            txtMessage.setText("Không đọc được ảnh: " + e.getMessage());
+        }
+    }
+
+    private MultipartBody.Part createImagePart(Uri uri) throws IOException {
+        String mimeType = getContentResolver().getType(uri);
+
+        if (mimeType == null) {
+            mimeType = "image/jpeg";
+        }
+
+        String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
+
+        if (extension == null) {
+            extension = "jpg";
+        }
+
+        File tempFile = new File(
+                getCacheDir(),
+                "upload_" + System.currentTimeMillis() + "." + extension
+        );
+
+        try (InputStream inputStream = getContentResolver().openInputStream(uri);
+             FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+
+            if (inputStream == null) {
+                throw new IOException("Không mở được file ảnh");
+            }
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+        }
+
+        RequestBody requestBody = RequestBody.create(MediaType.parse(mimeType), tempFile);
+        return MultipartBody.Part.createFormData("file", tempFile.getName(), requestBody);
     }
 }
