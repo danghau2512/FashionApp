@@ -32,7 +32,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
 
     private TextView btnBack, txtDetailMessage, txtOrderCode, txtReceiver, txtPhone, txtAddress, txtCreatedAt;
     private TextView txtProductTotal, txtShippingFee, txtDiscount, txtTotalAmount, txtPayment, txtOrderStatus, txtNote;
-    private Button btnShipOrder, btnCancelOrder;
+    private Button btnShipOrder, btnCancelOrder, btnCompleteOrder;
     private RecyclerView rvOrderItems;
 
     private AdminOrderItemAdapter itemAdapter;
@@ -83,6 +83,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
         txtNote = findViewById(R.id.txtNote);
         btnShipOrder = findViewById(R.id.btnConfirmOrder);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
+        btnCompleteOrder = findViewById(R.id.btnCompleteOrder);
         rvOrderItems = findViewById(R.id.rvOrderItems);
     }
 
@@ -95,6 +96,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
     private void setupEvents() {
         btnBack.setOnClickListener(v -> finish());
         btnShipOrder.setOnClickListener(v -> shipOrder());
+        btnCompleteOrder.setOnClickListener(v -> completeOrder());
         btnCancelOrder.setOnClickListener(v -> showCancelDialog());
     }
 
@@ -144,9 +146,12 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
 
     private void updateActionButtons(String status) {
         boolean isPending = "PENDING".equals(status);
+        boolean isShipping = "SHIPPING".equals(status);
+
         btnShipOrder.setText("Giao hàng");
         btnShipOrder.setVisibility(isPending ? View.VISIBLE : View.GONE);
         btnCancelOrder.setVisibility(isPending ? View.VISIBLE : View.GONE);
+        btnCompleteOrder.setVisibility(isShipping ? View.VISIBLE : View.GONE);
     }
 
     private void shipOrder() {
@@ -178,6 +183,41 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(Call<AdminOrderDetail> call, Throwable t) {
                             Toast.makeText(AdminOrderDetailActivity.this, "Lỗi API giao hàng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .show();
+    }
+
+    private void completeOrder() {
+        Long adminId = sessionManager.getUserId();
+        if (adminId == null) {
+            Toast.makeText(this, "Không tìm thấy adminId", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Hoàn thành đơn")
+                .setMessage("Chuyển đơn hàng này sang trạng thái hoàn thành?")
+                .setNegativeButton("Đóng", null)
+                .setPositiveButton("Hoàn thành", (dialog, which) -> {
+                    AdminOrderActionRequest request = new AdminOrderActionRequest(adminId);
+                    ApiClient.getApiService().completeAdminOrder(orderId, request).enqueue(new Callback<AdminOrderDetail>() {
+                        @Override
+                        public void onResponse(Call<AdminOrderDetail> call, Response<AdminOrderDetail> response) {
+                            if (response.isSuccessful() && response.body() != null) {
+                                Toast.makeText(AdminOrderDetailActivity.this, "Đơn hàng đã hoàn thành", Toast.LENGTH_SHORT).show();
+                                setResult(RESULT_OK);
+                                currentOrder = response.body();
+                                showOrderDetail(currentOrder);
+                            } else {
+                                Toast.makeText(AdminOrderDetailActivity.this, "Không hoàn thành được đơn hàng", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<AdminOrderDetail> call, Throwable t) {
+                            Toast.makeText(AdminOrderDetailActivity.this, "Lỗi API hoàn thành: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
                 })

@@ -81,6 +81,28 @@ public class AdminOrderService {
         return shipOrderByAdmin(orderId, adminId);
     }
 
+
+    @Transactional
+    public AdminOrderDetailResponse completeOrderByAdmin(Long orderId, Long adminId) {
+        requireAdmin(adminId);
+
+        ShopOrder order = adminOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        if (!"SHIPPING".equals(order.getOrderStatus())) {
+            throw new RuntimeException("Chỉ có thể hoàn thành đơn hàng đang vận chuyển");
+        }
+
+        order.setOrderStatus("COMPLETED");
+
+        if ("COD".equalsIgnoreCase(order.getPaymentMethod()) && !"PAID".equals(order.getPaymentStatus())) {
+            order.setPaymentStatus("PAID");
+        }
+
+        adminOrderRepository.save(order);
+        return getAdminOrderDetail(orderId);
+    }
+
     @Transactional
     public AdminOrderDetailResponse cancelOrderByAdmin(Long orderId, Long adminId, String cancelReason) {
         requireAdmin(adminId);
