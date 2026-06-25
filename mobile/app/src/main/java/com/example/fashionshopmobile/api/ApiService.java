@@ -262,6 +262,8 @@ public interface ApiService {
     Call<ImageUploadResponse> uploadAdminImage(
             @Query("adminId") Long adminId,
             @Part MultipartBody.Part file
+
+    );
     @PUT("api/orders/{orderId}/complete")
     Call<OrderResponse> completeOrder(
             @Path("orderId") Long orderId,
