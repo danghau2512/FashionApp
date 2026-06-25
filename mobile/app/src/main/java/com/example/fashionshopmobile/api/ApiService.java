@@ -256,12 +256,12 @@ public interface ApiService {
             @Path("orderId") Long orderId,
             @Body AdminOrderActionRequest request
     );
-
     @Multipart
     @POST("api/admin/uploads/images")
     Call<ImageUploadResponse> uploadAdminImage(
             @Query("adminId") Long adminId,
             @Part MultipartBody.Part file
+    );
     @PUT("api/orders/{orderId}/complete")
     Call<OrderResponse> completeOrder(
             @Path("orderId") Long orderId,
