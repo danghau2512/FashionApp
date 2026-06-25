@@ -103,8 +103,14 @@ public class OrderService {
         order.setShippingFee(shippingFee);
         order.setDiscountAmount(discountAmount);
         order.setTotalAmount(totalAmount);
-        order.setPaymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod() : "COD");
-        order.setPaymentStatus("UNPAID");
+        String paymentMethod = request.getPaymentMethod() == null ? "COD" : request.getPaymentMethod().trim().toUpperCase();
+
+        if (!"COD".equals(paymentMethod) && !"VNPAY".equals(paymentMethod)) {
+            throw new RuntimeException("Phương thức thanh toán không hợp lệ");
+        }
+
+        order.setPaymentMethod(paymentMethod);
+        order.setPaymentStatus("VNPAY".equals(paymentMethod) ? "PENDING" : "UNPAID");
         order.setOrderStatus("PENDING");
         order.setNote(request.getNote());
 
@@ -221,6 +227,31 @@ public class OrderService {
         order.setPaymentStatus("CANCELLED");
 
         ShopOrder savedOrder = shopOrderRepository.save(order);
+
+        return toOrderResponse(savedOrder, orderItems);
+    }
+
+    @Transactional
+    public OrderResponse completeOrder(Long orderId, Long userId) {
+        ShopOrder order = shopOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        if (order.getUser() == null || !order.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Đơn hàng không thuộc người dùng này");
+        }
+
+        if (!"SHIPPING".equals(order.getOrderStatus())) {
+            throw new RuntimeException("Chỉ có thể xác nhận đã nhận khi đơn hàng đang vận chuyển");
+        }
+
+        order.setOrderStatus("COMPLETED");
+
+        if ("COD".equalsIgnoreCase(order.getPaymentMethod()) && !"PAID".equals(order.getPaymentStatus())) {
+            order.setPaymentStatus("PAID");
+        }
+
+        ShopOrder savedOrder = shopOrderRepository.save(order);
+        List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(orderId);
 
         return toOrderResponse(savedOrder, orderItems);
     }

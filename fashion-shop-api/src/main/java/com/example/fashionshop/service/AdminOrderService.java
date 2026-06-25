@@ -58,18 +58,27 @@ public class AdminOrderService {
     }
 
     @Transactional
-    public AdminOrderDetailResponse confirmOrderByAdmin(Long orderId, Long adminId) {
+    public AdminOrderDetailResponse shipOrderByAdmin(Long orderId, Long adminId) {
         requireAdmin(adminId);
 
         ShopOrder order = adminOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
         if (!"PENDING".equals(order.getOrderStatus())) {
-            throw new RuntimeException("Chỉ có thể xác nhận đơn hàng đang chờ xử lý");
+            throw new RuntimeException("Chỉ có thể giao đơn hàng đang chờ xử lý");
         }
 
-        adminOrderRepository.confirmOrder(orderId, adminId);
+        adminOrderRepository.shipOrder(orderId);
         return getAdminOrderDetail(orderId);
+    }
+
+    /**
+     * Giữ lại tên hàm cũ để không phá code đang gọi confirm.
+     * Với luồng mới, admin bấm nút này nghĩa là chuyển đơn sang SHIPPING.
+     */
+    @Transactional
+    public AdminOrderDetailResponse confirmOrderByAdmin(Long orderId, Long adminId) {
+        return shipOrderByAdmin(orderId, adminId);
     }
 
     @Transactional
@@ -87,12 +96,8 @@ public class AdminOrderService {
             throw new RuntimeException("Đơn hàng đã được hủy trước đó");
         }
 
-        if ("COMPLETED".equals(order.getOrderStatus())) {
-            throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
-        }
-
-        if (!("PENDING".equals(order.getOrderStatus()) || "CONFIRMED".equals(order.getOrderStatus()))) {
-            throw new RuntimeException("Chỉ có thể hủy đơn hàng chờ xử lý hoặc đã xác nhận");
+        if (!"PENDING".equals(order.getOrderStatus())) {
+            throw new RuntimeException("Admin chỉ có thể hủy đơn hàng đang chờ xử lý");
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(orderId);
@@ -105,7 +110,7 @@ public class AdminOrderService {
             }
         }
 
-        adminOrderRepository.cancelOrderByAdmin(orderId, adminId, cancelReason.trim());
+        adminOrderRepository.cancelOrderByAdmin(orderId);
         return getAdminOrderDetail(orderId);
     }
 
@@ -136,12 +141,7 @@ public class AdminOrderService {
                 order.getPaymentMethod(),
                 order.getPaymentStatus(),
                 order.getOrderStatus(),
-                order.getCreatedAt(),
-                order.getConfirmedByAdminId(),
-                order.getConfirmedByAdminName(),
-                order.getCancelledByAdminId(),
-                order.getCancelledByAdminName(),
-                order.getCancelReason()
+                order.getCreatedAt()
         );
     }
 
@@ -161,13 +161,6 @@ public class AdminOrderService {
                 order.getOrderStatus(),
                 order.getNote(),
                 order.getCreatedAt(),
-                order.getConfirmedByAdminId(),
-                order.getConfirmedByAdminName(),
-                order.getConfirmedAt(),
-                order.getCancelledByAdminId(),
-                order.getCancelledByAdminName(),
-                order.getCancelledAt(),
-                order.getCancelReason(),
                 items
         );
     }

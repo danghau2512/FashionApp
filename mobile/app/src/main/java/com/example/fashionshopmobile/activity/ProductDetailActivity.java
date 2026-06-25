@@ -76,7 +76,6 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private MaterialButton btnWriteReview;
     private MaterialButton btnAddToCart;
-    private MaterialButton btnBuyNow;
 
     private RecyclerView recyclerVariants;
     private RecyclerView recyclerRelatedProducts;
@@ -157,7 +156,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         txtRelatedMessage = findViewById(R.id.txtRelatedMessage);
 
         btnAddToCart = findViewById(R.id.btnAddToCart);
-        btnBuyNow = findViewById(R.id.btnBuyNow);
 
         recyclerVariants = findViewById(R.id.recyclerVariants);
         recyclerRelatedProducts = findViewById(R.id.recyclerRelatedProducts);
@@ -223,11 +221,7 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         btnAddToCart.setOnClickListener(v -> addToCart());
 
-        btnBuyNow.setOnClickListener(v -> {
-            if (isValidBeforeAction()) {
-                Toast.makeText(this, "Mua ngay sẽ làm ở module thanh toán", Toast.LENGTH_SHORT).show();
-            }
-        });
+
 
         btnWriteReview.setOnClickListener(v -> showReviewDialog());
     }
@@ -265,7 +259,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                     if (variants.isEmpty()) {
                         txtSelectedVariantStock.setText("Sản phẩm chưa có phân loại");
                         btnAddToCart.setEnabled(false);
-                        btnBuyNow.setEnabled(false);
                     } else {
                         txtSelectedVariantStock.setText("Vui lòng chọn phân loại sản phẩm");
                     }
@@ -461,7 +454,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         boolean canBuy = selectedVariant != null && getStock(selectedVariant) > 0 && quantity > 0;
 
         btnAddToCart.setEnabled(canBuy);
-        btnBuyNow.setEnabled(canBuy);
 
         btnDecrease.setEnabled(canBuy && quantity > 1);
         btnIncrease.setEnabled(canBuy && quantity < getStock(selectedVariant));

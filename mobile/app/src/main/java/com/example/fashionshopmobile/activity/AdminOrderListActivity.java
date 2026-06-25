@@ -41,8 +41,8 @@ public class AdminOrderListActivity extends AppCompatActivity {
     private String currentKeyword = "";
     private String currentStatus = "";
 
-    private final String[] statusLabels = {"Tất cả", "Chờ xử lý", "Đã xác nhận", "Đang giao", "Hoàn thành", "Đã hủy"};
-    private final String[] statusValues = {"", "PENDING", "CONFIRMED", "SHIPPING", "COMPLETED", "CANCELLED"};
+    private final String[] statusLabels = {"Tất cả", "Chờ xử lý", "Đang vận chuyển", "Hoàn thành", "Đã hủy"};
+    private final String[] statusValues = {"", "PENDING", "SHIPPING", "COMPLETED", "CANCELLED"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -32,8 +32,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
 
     private TextView btnBack, txtDetailMessage, txtOrderCode, txtReceiver, txtPhone, txtAddress, txtCreatedAt;
     private TextView txtProductTotal, txtShippingFee, txtDiscount, txtTotalAmount, txtPayment, txtOrderStatus, txtNote;
-    private TextView txtConfirmedInfo, txtCancelledInfo, txtCancelReason;
-    private Button btnConfirmOrder, btnCancelOrder;
+    private Button btnShipOrder, btnCancelOrder;
     private RecyclerView rvOrderItems;
 
     private AdminOrderItemAdapter itemAdapter;
@@ -82,10 +81,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
         txtPayment = findViewById(R.id.txtPayment);
         txtOrderStatus = findViewById(R.id.txtOrderStatus);
         txtNote = findViewById(R.id.txtNote);
-        txtConfirmedInfo = findViewById(R.id.txtConfirmedInfo);
-        txtCancelledInfo = findViewById(R.id.txtCancelledInfo);
-        txtCancelReason = findViewById(R.id.txtCancelReason);
-        btnConfirmOrder = findViewById(R.id.btnConfirmOrder);
+        btnShipOrder = findViewById(R.id.btnConfirmOrder);
         btnCancelOrder = findViewById(R.id.btnCancelOrder);
         rvOrderItems = findViewById(R.id.rvOrderItems);
     }
@@ -98,7 +94,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
 
     private void setupEvents() {
         btnBack.setOnClickListener(v -> finish());
-        btnConfirmOrder.setOnClickListener(v -> confirmOrder());
+        btnShipOrder.setOnClickListener(v -> shipOrder());
         btnCancelOrder.setOnClickListener(v -> showCancelDialog());
     }
 
@@ -142,27 +138,18 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
         txtOrderStatus.setText("Trạng thái đơn: " + translateOrderStatus(order.getOrderStatus()));
         txtNote.setText("Ghi chú: " + safe(order.getNote()));
 
-        txtConfirmedInfo.setText(order.getConfirmedByAdminName() == null ?
-                "Admin xác nhận: Chưa có" :
-                "Admin xác nhận: " + order.getConfirmedByAdminName() + " - " + safe(order.getConfirmedAt()));
-
-        txtCancelledInfo.setText(order.getCancelledByAdminName() == null ?
-                "Admin hủy: Chưa có" :
-                "Admin hủy: " + order.getCancelledByAdminName() + " - " + safe(order.getCancelledAt()));
-
-        txtCancelReason.setText("Lý do hủy: " + safe(order.getCancelReason()));
         itemAdapter.setItems(order.getItems());
         updateActionButtons(order.getOrderStatus());
     }
 
     private void updateActionButtons(String status) {
         boolean isPending = "PENDING".equals(status);
-        boolean isConfirmed = "CONFIRMED".equals(status);
-        btnConfirmOrder.setVisibility(isPending ? View.VISIBLE : View.GONE);
-        btnCancelOrder.setVisibility((isPending || isConfirmed) ? View.VISIBLE : View.GONE);
+        btnShipOrder.setText("Giao hàng");
+        btnShipOrder.setVisibility(isPending ? View.VISIBLE : View.GONE);
+        btnCancelOrder.setVisibility(isPending ? View.VISIBLE : View.GONE);
     }
 
-    private void confirmOrder() {
+    private void shipOrder() {
         Long adminId = sessionManager.getUserId();
         if (adminId == null) {
             Toast.makeText(this, "Không tìm thấy adminId", Toast.LENGTH_SHORT).show();
@@ -170,26 +157,27 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Xác nhận đơn hàng")
-                .setMessage("Bạn chắc chắn muốn xác nhận đơn hàng này?")
-                .setNegativeButton("Hủy", null)
-                .setPositiveButton("Xác nhận", (dialog, which) -> {
+                .setTitle("Giao hàng")
+                .setMessage("Chuyển đơn hàng này sang trạng thái đang vận chuyển?")
+                .setNegativeButton("Đóng", null)
+                .setPositiveButton("Giao hàng", (dialog, which) -> {
                     AdminOrderActionRequest request = new AdminOrderActionRequest(adminId);
-                    ApiClient.getApiService().confirmAdminOrder(orderId, request).enqueue(new Callback<AdminOrderDetail>() {
+                    ApiClient.getApiService().shipAdminOrder(orderId, request).enqueue(new Callback<AdminOrderDetail>() {
                         @Override
                         public void onResponse(Call<AdminOrderDetail> call, Response<AdminOrderDetail> response) {
                             if (response.isSuccessful() && response.body() != null) {
-                                Toast.makeText(AdminOrderDetailActivity.this, "Đã xác nhận đơn hàng", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AdminOrderDetailActivity.this, "Đơn hàng đã chuyển sang đang vận chuyển", Toast.LENGTH_SHORT).show();
+                                setResult(RESULT_OK);
                                 currentOrder = response.body();
                                 showOrderDetail(currentOrder);
                             } else {
-                                Toast.makeText(AdminOrderDetailActivity.this, "Không xác nhận được đơn hàng", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AdminOrderDetailActivity.this, "Không chuyển được trạng thái đơn hàng", Toast.LENGTH_SHORT).show();
                             }
                         }
 
                         @Override
                         public void onFailure(Call<AdminOrderDetail> call, Throwable t) {
-                            Toast.makeText(AdminOrderDetailActivity.this, "Lỗi API xác nhận: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(AdminOrderDetailActivity.this, "Lỗi API giao hàng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
                 })
@@ -231,6 +219,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
             public void onResponse(Call<AdminOrderDetail> call, Response<AdminOrderDetail> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     Toast.makeText(AdminOrderDetailActivity.this, "Đã hủy đơn hàng", Toast.LENGTH_SHORT).show();
+                    setResult(RESULT_OK);
                     currentOrder = response.body();
                     showOrderDetail(currentOrder);
                 } else {
@@ -258,8 +247,7 @@ public class AdminOrderDetailActivity extends AppCompatActivity {
         if (status == null) return "Không rõ";
         switch (status) {
             case "PENDING": return "Chờ xử lý";
-            case "CONFIRMED": return "Đã xác nhận";
-            case "SHIPPING": return "Đang giao";
+            case "SHIPPING": return "Đang vận chuyển";
             case "COMPLETED": return "Hoàn thành";
             case "CANCELLED": return "Đã hủy";
             default: return status;
