@@ -9,13 +9,20 @@ import com.example.fashionshop.entity.User;
 import com.example.fashionshop.repository.CategoryRepository;
 import com.example.fashionshop.repository.ProductRepository;
 import com.example.fashionshop.repository.UserRepository;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class ProductService {
@@ -59,7 +66,67 @@ public class ProductService {
     }
 
     public List<ProductResponse> searchProducts(String keyword) {
-        return productRepository.findByNameContainingIgnoreCaseAndStatus(keyword, STATUS_ACTIVE)
+        return searchProducts(keyword, null, null, null, null, null);
+    }
+
+    public List<ProductResponse> searchProducts(String keyword,
+                                                BigDecimal minPrice,
+                                                BigDecimal maxPrice,
+                                                List<Long> categoryIds,
+                                                List<String> genders,
+                                                Boolean onlySale) {
+        String normalizedKeyword = normalizeKeyword(keyword);
+        List<Long> normalizedCategoryIds = normalizeCategoryIds(categoryIds);
+        List<String> normalizedGenders = normalizeGenders(genders);
+
+        Specification<Product> specification = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
+
+            predicates.add(criteriaBuilder.equal(root.get("status"), STATUS_ACTIVE));
+
+            if (normalizedKeyword != null) {
+                String likeKeyword = "%" + normalizedKeyword.toLowerCase(Locale.ROOT) + "%";
+
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), likeKeyword),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("brand")), likeKeyword),
+                        criteriaBuilder.like(criteriaBuilder.lower(categoryJoin.get("name")), likeKeyword)
+                ));
+            }
+
+            Expression<BigDecimal> effectivePrice = criteriaBuilder.coalesce(
+                    root.<BigDecimal>get("salePrice"),
+                    root.<BigDecimal>get("price")
+            );
+
+            if (minPrice != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(effectivePrice, minPrice));
+            }
+
+            if (maxPrice != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(effectivePrice, maxPrice));
+            }
+
+            if (!normalizedCategoryIds.isEmpty()) {
+                predicates.add(categoryJoin.get("id").in(normalizedCategoryIds));
+            }
+
+            if (!normalizedGenders.isEmpty()) {
+                predicates.add(root.get("gender").in(normalizedGenders));
+            }
+
+            if (Boolean.TRUE.equals(onlySale)) {
+                predicates.add(criteriaBuilder.isNotNull(root.get("salePrice")));
+            }
+
+            query.orderBy(criteriaBuilder.desc(root.get("id")));
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return productRepository.findAll(specification)
                 .stream()
                 .map(this::toProductResponse)
                 .toList();
@@ -225,13 +292,44 @@ public class ProductService {
     }
 
     private String normalizeRequiredStatus(String status) {
-        String normalizedStatus = status.trim().toUpperCase();
+        String normalizedStatus = status.trim().toUpperCase(Locale.ROOT);
 
         if (!STATUS_ACTIVE.equals(normalizedStatus) && !STATUS_INACTIVE.equals(normalizedStatus)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái chỉ được là ACTIVE hoặc INACTIVE");
         }
 
         return normalizedStatus;
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return null;
+        }
+
+        return keyword.trim();
+    }
+
+    private List<Long> normalizeCategoryIds(List<Long> categoryIds) {
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return categoryIds.stream()
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .toList();
+    }
+
+    private List<String> normalizeGenders(List<String> genders) {
+        if (genders == null || genders.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return genders.stream()
+                .filter(gender -> gender != null && !gender.trim().isEmpty())
+                .map(String::trim)
+                .distinct()
+                .toList();
     }
 
     private ProductResponse toProductResponse(Product product) {
