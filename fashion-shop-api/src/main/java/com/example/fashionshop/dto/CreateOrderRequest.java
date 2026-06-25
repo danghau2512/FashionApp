@@ -23,6 +23,11 @@ public class CreateOrderRequest {
 
     @NotBlank(message = "Địa chỉ giao hàng không được để trống")
     private String deliveryAddress;
+    @NotNull(message = "District ID giao hàng không được để trống")
+    private Integer deliveryDistrictId;
+
+    @NotBlank(message = "Ward code giao hàng không được để trống")
+    private String deliveryWardCode;
 
     private BigDecimal deliveryLatitude;
     private BigDecimal deliveryLongitude;
@@ -32,7 +37,13 @@ public class CreateOrderRequest {
     private String paymentMethod;
 
     private String note;
+    public Integer getDeliveryDistrictId() {
+        return deliveryDistrictId;
+    }
 
+    public String getDeliveryWardCode() {
+        return deliveryWardCode;
+    }
     public Long getUserId() {
         return userId;
     }

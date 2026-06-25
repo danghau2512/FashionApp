@@ -11,9 +11,11 @@ import com.example.fashionshopmobile.model.ProductVariant;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
+import com.example.fashionshopmobile.request.ShippingQuoteRequest;
 import com.example.fashionshopmobile.request.UpdateCartItemRequest;
 import com.example.fashionshopmobile.request.UpdateUserRequest;
 import com.example.fashionshopmobile.request.UserSyncRequest;
@@ -121,6 +123,8 @@ public interface ApiService {
     Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
+    @POST("api/shipping/quote")
+    Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
     @GET("api/admin/statistics")
     Call<AdminStatistics> getAdminStatistics(
             @Query("adminId") Long adminId,
