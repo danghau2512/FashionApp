@@ -18,6 +18,10 @@ import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.shipping.GhnDistrict;
+import com.example.fashionshopmobile.model.shipping.GhnProvince;
+import com.example.fashionshopmobile.model.shipping.GhnWard;
+import com.example.fashionshopmobile.model.VnPayPaymentResponse;
 import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
@@ -38,6 +42,11 @@ import com.example.fashionshopmobile.request.UserSyncRequest;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.example.fashionshopmobile.model.ImageUploadResponse;
+
+import java.math.BigDecimal;
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -51,6 +60,16 @@ public interface ApiService {
 
     @GET("api/products")
     Call<List<Product>> getProducts();
+
+    @GET("api/products/search")
+    Call<List<Product>> searchProducts(
+            @Query("keyword") String keyword,
+            @Query("minPrice") BigDecimal minPrice,
+            @Query("maxPrice") BigDecimal maxPrice,
+            @Query("categoryIds") List<Long> categoryIds,
+            @Query("genders") List<String> genders,
+            @Query("onlySale") Boolean onlySale
+    );
 
     @GET("api/products/{id}")
     Call<Product> getProductById(@Path("id") Long id);
@@ -78,6 +97,7 @@ public interface ApiService {
 
     @PUT("api/orders/{orderId}/cancel")
     Call<OrderResponse> cancelOrder(@Path("orderId") Long orderId);
+
     @PUT("api/users/{id}")
     Call<User> updateUser(
             @Path("id") Long id,
@@ -140,6 +160,10 @@ public interface ApiService {
 
     @POST("api/orders")
     Call<OrderResponse> createOrder(@Body CreateOrderRequest request);
+
+    @POST("api/shipping/quote")
+    Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
+
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
 
@@ -203,8 +227,7 @@ public interface ApiService {
             @Query("adminId") Long adminId,
             @Body UpdateProductVariantStatusRequest request
     );
-    @POST("api/shipping/quote")
-    Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
+
     @GET("api/admin/statistics")
     Call<AdminStatistics> getAdminStatistics(
             @Query("adminId") Long adminId,
@@ -212,6 +235,7 @@ public interface ApiService {
             @Query("bestSellerMonths") Integer bestSellerMonths,
             @Query("noSaleMonths") Integer noSaleMonths
     );
+
     @GET("api/reviews/product/{productId}")
     Call<List<ProductReview>> getProductReviews(@Path("productId") Long productId);
 
@@ -252,6 +276,11 @@ public interface ApiService {
             @Path("orderId") Long orderId,
             @Body AdminOrderActionRequest request
     );
+
+    @POST("api/payments/vnpay/create/{orderId}")
+    Call<VnPayPaymentResponse> createVnPayPayment(@Path("orderId") Long orderId);
+
+
 
     @Multipart
     @POST("api/admin/uploads/images")
