@@ -440,20 +440,6 @@
         android:background="@color/white">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnBuyNow"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_weight="1"
-            android:text="Mua ngay"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="@color/primary_pink"
-            app:backgroundTint="@color/white"
-            app:strokeColor="@color/primary_pink"
-            app:strokeWidth="1dp"
-            app:cornerRadius="12dp" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAddToCart"
             android:layout_width="0dp"
             android:layout_height="50dp"
