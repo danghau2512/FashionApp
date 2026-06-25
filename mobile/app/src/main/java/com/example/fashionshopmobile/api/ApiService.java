@@ -17,10 +17,6 @@ import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
-import com.example.fashionshopmobile.model.VnPayPaymentResponse;
-import com.example.fashionshopmobile.model.shipping.GhnDistrict;
-import com.example.fashionshopmobile.model.shipping.GhnProvince;
-import com.example.fashionshopmobile.model.shipping.GhnWard;
 import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
@@ -52,16 +48,6 @@ public interface ApiService {
 
     @GET("api/products")
     Call<List<Product>> getProducts();
-
-    @GET("api/products/search")
-    Call<List<Product>> searchProducts(
-            @Query("keyword") String keyword,
-            @Query("minPrice") BigDecimal minPrice,
-            @Query("maxPrice") BigDecimal maxPrice,
-            @Query("categoryIds") List<Long> categoryIds,
-            @Query("genders") List<String> genders,
-            @Query("onlySale") Boolean onlySale
-    );
 
     @GET("api/products/{id}")
     Call<Product> getProductById(@Path("id") Long id);
@@ -223,7 +209,6 @@ public interface ApiService {
             @Query("bestSellerMonths") Integer bestSellerMonths,
             @Query("noSaleMonths") Integer noSaleMonths
     );
-
     @GET("api/reviews/product/{productId}")
     Call<List<ProductReview>> getProductReviews(@Path("productId") Long productId);
 
@@ -263,6 +248,19 @@ public interface ApiService {
     Call<AdminOrderDetail> cancelAdminOrder(
             @Path("orderId") Long orderId,
             @Body AdminOrderActionRequest request
+    );
+
+    @Multipart
+    @POST("api/admin/uploads/images")
+    Call<ImageUploadResponse> uploadAdminImage(
+            @Query("adminId") Long adminId,
+            @Part MultipartBody.Part file
+
+    );
+    @PUT("api/orders/{orderId}/complete")
+    Call<OrderResponse> completeOrder(
+            @Path("orderId") Long orderId,
+            @Query("userId") Long userId
     );
 
 }
