@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -94,6 +95,15 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private int quantity = 1;
 
+    private NestedScrollView scrollProductDetail;
+    private View layoutReviewSection;
+
+    private boolean openReviewSection;
+    private boolean autoOpenReviewDialog;
+    private boolean reviewSectionScrolled = false;
+    private boolean autoReviewDialogHandled = false;
+    private Long targetReviewOrderItemId;
+
     private final NumberFormat priceFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
 
     @Override
@@ -103,6 +113,12 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         sessionManager = new SessionManager(this);
         productId = getIntent().getLongExtra("product_id", -1);
+
+        openReviewSection = getIntent().getBooleanExtra("open_review_section", false);
+        autoOpenReviewDialog = getIntent().getBooleanExtra("auto_open_review_dialog", false);
+
+        long orderItemIdExtra = getIntent().getLongExtra("review_order_item_id", -1);
+        targetReviewOrderItemId = orderItemIdExtra == -1 ? null : orderItemIdExtra;
 
         initViews();
         setupVariantRecyclerView();
@@ -165,6 +181,9 @@ public class ProductDetailActivity extends AppCompatActivity {
         txtReviewMessage = findViewById(R.id.txtReviewMessage);
         btnWriteReview = findViewById(R.id.btnWriteReview);
         recyclerReviews = findViewById(R.id.recyclerReviews);
+
+        scrollProductDetail = findViewById(R.id.scrollProductDetail);
+        layoutReviewSection = findViewById(R.id.layoutReviewSection);
     }
 
     private void setupVariantRecyclerView() {
@@ -223,7 +242,8 @@ public class ProductDetailActivity extends AppCompatActivity {
 
 
 
-        btnWriteReview.setOnClickListener(v -> showReviewDialog());
+//        btnWriteReview.setOnClickListener(v -> showReviewDialog());
+        btnWriteReview.setOnClickListener(v -> showReviewDialog(null));
     }
 
     private void loadProductDetail() {
@@ -648,6 +668,7 @@ public class ProductDetailActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     currentReviewEligibility = response.body();
                     updateReviewEligibilityView(currentReviewEligibility);
+                    handleOpenReviewFromOrderDetail();
                 } else {
                     currentReviewEligibility = null;
                     txtReviewEligibility.setText("Không kiểm tra được quyền đánh giá");
@@ -662,6 +683,62 @@ public class ProductDetailActivity extends AppCompatActivity {
                 btnWriteReview.setVisibility(View.GONE);
             }
         });
+    }
+
+    private void handleOpenReviewFromOrderDetail() {
+        if (openReviewSection) {
+            scrollToReviewSection();
+        }
+
+        if (!autoOpenReviewDialog || autoReviewDialogHandled) {
+            return;
+        }
+
+        autoReviewDialogHandled = true;
+
+        if (currentReviewEligibility == null
+                || currentReviewEligibility.getReviewableOrderItems() == null
+                || currentReviewEligibility.getReviewableOrderItems().isEmpty()) {
+            Toast.makeText(this, "Sản phẩm này chưa đủ điều kiện đánh giá hoặc đã được đánh giá", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (targetReviewOrderItemId != null && !isTargetOrderItemReviewable(targetReviewOrderItemId)) {
+            Toast.makeText(this, "Lượt mua này đã được đánh giá hoặc không còn hợp lệ", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnWriteReview.postDelayed(() ->
+                showReviewDialog(targetReviewOrderItemId), 300
+        );
+    }
+
+    private void scrollToReviewSection() {
+        if (reviewSectionScrolled || scrollProductDetail == null || layoutReviewSection == null) {
+            return;
+        }
+
+        reviewSectionScrolled = true;
+
+        scrollProductDetail.post(() ->
+                scrollProductDetail.smoothScrollTo(0, layoutReviewSection.getTop())
+        );
+    }
+
+    private boolean isTargetOrderItemReviewable(Long orderItemId) {
+        if (orderItemId == null
+                || currentReviewEligibility == null
+                || currentReviewEligibility.getReviewableOrderItems() == null) {
+            return false;
+        }
+
+        for (ReviewableOrderItem item : currentReviewEligibility.getReviewableOrderItems()) {
+            if (orderItemId.equals(item.getOrderItemId())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void updateReviewEligibilityView(ReviewEligibility eligibility) {
@@ -687,7 +764,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void showReviewDialog() {
+    private void showReviewDialog(Long selectedOrderItemId) {
         Long userId = sessionManager.getUserId();
 
         if (userId == null) {
@@ -728,6 +805,17 @@ public class ProductDetailActivity extends AppCompatActivity {
         );
         spinnerOrderItem.setAdapter(spinnerAdapter);
         layout.addView(spinnerOrderItem);
+
+        if (selectedOrderItemId != null) {
+            for (int i = 0; i < reviewableItems.size(); i++) {
+                ReviewableOrderItem item = reviewableItems.get(i);
+
+                if (selectedOrderItemId.equals(item.getOrderItemId())) {
+                    spinnerOrderItem.setSelection(i);
+                    break;
+                }
+            }
+        }
 
         TextView txtRatingLabel = new TextView(this);
         txtRatingLabel.setText("Số sao");
