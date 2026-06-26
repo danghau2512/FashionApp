@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,12 +24,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fashionshopmobile.R;
 import com.example.fashionshopmobile.activity.AddressActivity;
+import com.example.fashionshopmobile.activity.CartActivity;
 import com.example.fashionshopmobile.activity.EditProfileActivity;
 import com.example.fashionshopmobile.activity.LoginActivity;
 import com.example.fashionshopmobile.activity.OrderHistoryActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
+import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.OrderSummary;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.User;
@@ -53,7 +56,9 @@ public class ProfileFragment extends Fragment {
 
     private ImageView imgAvatar;
     private TextView tvFullName, tvEmail, btnCart;
+    private TextView txtCartBadge;
     private TextView tvPendingCount, tvPackingCount, tvShippingCount, tvReviewCount;
+    private LinearLayout layoutReview;
     private TextView tvViewOrders;
     private RecyclerView rvSuggestedProducts;
 
@@ -67,6 +72,7 @@ public class ProfileFragment extends Fragment {
     private TextView layoutAddress, layoutResetPassword, btnLogout;
     private TextView btnAddAvatar;
     private ActivityResultLauncher<String> avatarPickerLauncher;
+
 
     @Nullable
     @Override
@@ -93,6 +99,7 @@ public class ProfileFragment extends Fragment {
         loadUserProfile();
         loadOrderStatus();
         loadSuggestedProducts();
+        loadCartCount();
 
         return view;
     }
@@ -107,11 +114,13 @@ public class ProfileFragment extends Fragment {
         tvFullName = view.findViewById(R.id.tvFullName);
         tvEmail = view.findViewById(R.id.tvEmail);
         btnCart = view.findViewById(R.id.btnCart);
+        txtCartBadge = view.findViewById(R.id.txtCartBadge);
 
         tvPendingCount = view.findViewById(R.id.tvPendingCount);
         tvPackingCount = view.findViewById(R.id.tvPackingCount);
         tvShippingCount = view.findViewById(R.id.tvShippingCount);
         tvReviewCount = view.findViewById(R.id.tvReviewCount);
+        layoutReview = view.findViewById(R.id.layoutReview);
 
         tvViewOrders = view.findViewById(R.id.tvViewOrders);
         rvSuggestedProducts = view.findViewById(R.id.rvSuggestedProducts);
@@ -260,11 +269,14 @@ public class ProfileFragment extends Fragment {
 
             if (status.equals("PENDING")) {
                 pending++;
-            } else if (status.equals("CONFIRMED") || status.equals("PROCESSING") || status.equals("PACKING")) {
+            } else if (status.equals("CONFIRMED")
+                    || status.equals("PROCESSING")
+                    || status.equals("PACKING")) {
                 packing++;
-            } else if (status.equals("SHIPPING") || status.equals("DELIVERING")) {
+            } else if (status.equals("SHIPPING")
+                    || status.equals("DELIVERING")) {
                 shipping++;
-            } else if (status.equals("DELIVERED") || status.equals("COMPLETED")) {
+            } else if (status.equals("COMPLETED")) {
                 review++;
             }
         }
@@ -323,9 +335,8 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupClickEvents() {
-        btnCart.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Chức năng giỏ hàng đang phát triển", Toast.LENGTH_SHORT).show();
-        });
+        btnCart.setOnClickListener(v -> openCart());
+
 
         tvViewOrders.setOnClickListener(v -> openOrderHistory());
 
@@ -341,6 +352,20 @@ public class ProfileFragment extends Fragment {
         layoutResetPassword.setOnClickListener(v -> sendResetPasswordEmail());
 
         btnLogout.setOnClickListener(v -> showLogoutDialog());
+        layoutReview.setOnClickListener(v -> openReviewOrders());
+    }
+
+    private void openCart() {
+        if (userId == null) {
+            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem giỏ hàng", Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent(requireContext(), LoginActivity.class);
+            startActivity(intent);
+            return;
+        }
+
+        Intent intent = new Intent(requireContext(), CartActivity.class);
+        startActivity(intent);
     }
 
     private void openOrderHistory() {
@@ -417,6 +442,7 @@ public class ProfileFragment extends Fragment {
             loadUserProfile();
             loadOrderStatus();
             loadSuggestedProducts();
+            loadCartCount();
         }
     }
     private void setupAvatarPicker() {
@@ -528,4 +554,76 @@ public class ProfileFragment extends Fragment {
         RequestBody requestBody = RequestBody.create(MediaType.parse(mimeType), tempFile);
         return MultipartBody.Part.createFormData("file", tempFile.getName(), requestBody);
     }
+
+    private void loadCartCount() {
+        Long currentUserId = sessionManager.getUserId();
+
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (currentUserId == null) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        ApiClient.getApiService().getCartByUserId(currentUserId).enqueue(new Callback<List<CartItem>>() {
+            @Override
+            public void onResponse(Call<List<CartItem>> call, Response<List<CartItem>> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                if (response.isSuccessful() && response.body() != null) {
+                    int totalQuantity = 0;
+
+                    for (CartItem item : response.body()) {
+                        if (item.getQuantity() != null) {
+                            totalQuantity += item.getQuantity();
+                        }
+                    }
+
+                    showCartBadge(totalQuantity);
+                } else {
+                    txtCartBadge.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<CartItem>> call, Throwable t) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                if (txtCartBadge != null) {
+                    txtCartBadge.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void showCartBadge(int totalQuantity) {
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (totalQuantity <= 0) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        txtCartBadge.setVisibility(View.VISIBLE);
+
+        if (totalQuantity > 99) {
+            txtCartBadge.setText("99+");
+        } else {
+            txtCartBadge.setText(String.valueOf(totalQuantity));
+        }
+    }
+    private void openReviewOrders() {
+        Intent intent = new Intent(requireContext(), OrderHistoryActivity.class);
+        intent.putExtra("filterStatus", "REVIEW");
+        startActivity(intent);
+    }
+
 }

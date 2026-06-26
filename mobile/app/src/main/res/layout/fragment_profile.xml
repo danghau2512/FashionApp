@@ -84,14 +84,36 @@
 
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/btnCart"
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
-                    android:background="@drawable/bg_avatar_circle"
-                    android:gravity="center"
-                    android:text="🛒"
-                    android:textSize="24sp" />
+                <FrameLayout
+                    android:layout_width="54dp"
+                    android:layout_height="54dp">
+
+                    <TextView
+                        android:id="@+id/btnCart"
+                        android:layout_width="46dp"
+                        android:layout_height="46dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_avatar_circle"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="🛒"
+                        android:textSize="24sp" />
+
+                    <TextView
+                        android:id="@+id/txtCartBadge"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="top|end"
+                        android:background="@drawable/bg_cart_badge"
+                        android:gravity="center"
+                        android:text="0"
+                        android:textColor="@android:color/white"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                </FrameLayout>
 
             </LinearLayout>
 
