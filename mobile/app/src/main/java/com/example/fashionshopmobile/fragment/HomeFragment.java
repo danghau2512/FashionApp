@@ -260,6 +260,7 @@ public class HomeFragment extends Fragment {
 
                     Glide.with(HomeFragment.this)
                             .load(buildImageUrl(avatarUrl))
+                            .circleCrop()
                             .placeholder(android.R.drawable.ic_menu_myplaces)
                             .error(android.R.drawable.ic_menu_myplaces)
                             .into(imgHomeAvatar);

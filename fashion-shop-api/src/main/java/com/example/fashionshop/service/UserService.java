@@ -24,19 +24,31 @@ public class UserService {
             user = new User();
             user.setFirebaseUid(request.getFirebaseUid());
             user.setEmail(request.getEmail());
+            user.setFullName(request.getFullName());
+            user.setPhone(request.getPhone());
+            user.setAvatarUrl(request.getAvatarUrl());
             user.setRole("CUSTOMER");
             user.setStatus("ACTIVE");
-        }
+        } else {
+            user.setEmail(request.getEmail());
 
-        user.setFullName(request.getFullName());
-        user.setPhone(request.getPhone());
-        user.setAvatarUrl(request.getAvatarUrl());
+            if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
+                user.setFullName(request.getFullName());
+            }
+
+            if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+                user.setPhone(request.getPhone());
+            }
+
+            if (request.getAvatarUrl() != null && !request.getAvatarUrl().trim().isEmpty()) {
+                user.setAvatarUrl(request.getAvatarUrl());
+            }
+        }
 
         User savedUser = userRepository.save(user);
 
         return UserResponse.fromEntity(savedUser);
     }
-
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));

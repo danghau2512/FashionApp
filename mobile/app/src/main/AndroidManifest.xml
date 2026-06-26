@@ -25,6 +25,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".activity.AvatarPreviewActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+        <activity
             android:name=".activity.AddressActivity"
             android:exported="false" />
 

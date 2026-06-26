@@ -292,5 +292,10 @@ public interface ApiService {
             @Path("orderId") Long orderId,
             @Query("userId") Long userId
     );
-
+    @Multipart
+    @POST("api/users/{userId}/avatar")
+    Call<User> uploadUserAvatar(
+            @Path("userId") Long userId,
+            @Part MultipartBody.Part file
+    );
 }
