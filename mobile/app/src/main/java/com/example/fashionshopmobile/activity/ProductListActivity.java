@@ -48,7 +48,6 @@ public class ProductListActivity extends AppCompatActivity {
 
     private CheckBox cbGenderNam;
     private CheckBox cbGenderNu;
-    private CheckBox cbGenderUnisex;
     private CheckBox cbOnlySale;
 
     private RangeSlider priceSlider;
@@ -94,7 +93,6 @@ public class ProductListActivity extends AppCompatActivity {
 
         cbGenderNam = findViewById(R.id.cbGenderNam);
         cbGenderNu = findViewById(R.id.cbGenderNu);
-        cbGenderUnisex = findViewById(R.id.cbGenderUnisex);
         cbOnlySale = findViewById(R.id.cbOnlySale);
 
         priceSlider = findViewById(R.id.priceSlider);
@@ -171,7 +169,6 @@ public class ProductListActivity extends AppCompatActivity {
 
         cbGenderNam.setChecked(false);
         cbGenderNu.setChecked(false);
-        cbGenderUnisex.setChecked(false);
         cbOnlySale.setChecked(false);
 
         updatePriceRangeText();
@@ -300,24 +297,11 @@ public class ProductListActivity extends AppCompatActivity {
         List<String> genders = new ArrayList<>();
 
         if (cbGenderNam.isChecked()) {
-            genders.add("Nam");
-            genders.add("NAM");
-            genders.add("Male");
-            genders.add("MALE");
+            genders.add("MEN");
         }
 
         if (cbGenderNu.isChecked()) {
-            genders.add("Nữ");
-            genders.add("NỮ");
-            genders.add("Nu");
-            genders.add("NU");
-            genders.add("Female");
-            genders.add("FEMALE");
-        }
-
-        if (cbGenderUnisex.isChecked()) {
-            genders.add("Unisex");
-            genders.add("UNISEX");
+            genders.add("WOMEN");
         }
 
         return genders;
