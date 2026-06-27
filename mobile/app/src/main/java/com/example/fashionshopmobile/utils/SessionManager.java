@@ -16,6 +16,8 @@ public class SessionManager {
     private static final String KEY_FULL_NAME = "full_name";
     private static final String KEY_ROLE = "role";
     private static final String KEY_STATUS = "status";
+    private static final String KEY_PHONE = "phone";
+    private static final String KEY_AVATAR_URL = "avatar_url";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
@@ -31,6 +33,8 @@ public class SessionManager {
         editor.putString(KEY_FIREBASE_UID, user.getFirebaseUid());
         editor.putString(KEY_EMAIL, user.getEmail());
         editor.putString(KEY_FULL_NAME, user.getFullName());
+        editor.putString(KEY_PHONE, user.getPhone());
+        editor.putString(KEY_AVATAR_URL, user.getAvatarUrl());
         editor.putString(KEY_ROLE, user.getRole());
         editor.putString(KEY_STATUS, user.getStatus());
         editor.apply();
@@ -68,6 +72,13 @@ public class SessionManager {
 
     public String getStatus() {
         return sharedPreferences.getString(KEY_STATUS, "ACTIVE");
+    }
+    public String getPhone() {
+        return sharedPreferences.getString(KEY_PHONE, null);
+    }
+
+    public String getAvatarUrl() {
+        return sharedPreferences.getString(KEY_AVATAR_URL, null);
     }
 
     public boolean isAdmin() {

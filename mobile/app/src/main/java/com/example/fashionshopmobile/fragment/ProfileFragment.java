@@ -1,14 +1,19 @@
 package com.example.fashionshopmobile.fragment;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -19,21 +24,30 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fashionshopmobile.R;
 import com.example.fashionshopmobile.activity.AddressActivity;
+import com.example.fashionshopmobile.activity.CartActivity;
 import com.example.fashionshopmobile.activity.EditProfileActivity;
 import com.example.fashionshopmobile.activity.LoginActivity;
 import com.example.fashionshopmobile.activity.OrderHistoryActivity;
 import com.example.fashionshopmobile.activity.ProductDetailActivity;
 import com.example.fashionshopmobile.adapter.ProductAdapter;
 import com.example.fashionshopmobile.api.ApiClient;
+import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.OrderSummary;
 import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.utils.SessionManager;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -42,7 +56,9 @@ public class ProfileFragment extends Fragment {
 
     private ImageView imgAvatar;
     private TextView tvFullName, tvEmail, btnCart;
+    private TextView txtCartBadge;
     private TextView tvPendingCount, tvPackingCount, tvShippingCount, tvReviewCount;
+    private LinearLayout layoutReview;
     private TextView tvViewOrders;
     private RecyclerView rvSuggestedProducts;
 
@@ -54,6 +70,9 @@ public class ProfileFragment extends Fragment {
     private static final int SUGGEST_LIMIT = 6;
 
     private TextView layoutAddress, layoutResetPassword, btnLogout;
+    private TextView btnAddAvatar;
+    private ActivityResultLauncher<String> avatarPickerLauncher;
+
 
     @Nullable
     @Override
@@ -80,8 +99,14 @@ public class ProfileFragment extends Fragment {
         loadUserProfile();
         loadOrderStatus();
         loadSuggestedProducts();
+        loadCartCount();
 
         return view;
+    }
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setupAvatarPicker();
     }
 
     private void initViews(View view) {
@@ -89,11 +114,13 @@ public class ProfileFragment extends Fragment {
         tvFullName = view.findViewById(R.id.tvFullName);
         tvEmail = view.findViewById(R.id.tvEmail);
         btnCart = view.findViewById(R.id.btnCart);
+        txtCartBadge = view.findViewById(R.id.txtCartBadge);
 
         tvPendingCount = view.findViewById(R.id.tvPendingCount);
         tvPackingCount = view.findViewById(R.id.tvPackingCount);
         tvShippingCount = view.findViewById(R.id.tvShippingCount);
         tvReviewCount = view.findViewById(R.id.tvReviewCount);
+        layoutReview = view.findViewById(R.id.layoutReview);
 
         tvViewOrders = view.findViewById(R.id.tvViewOrders);
         rvSuggestedProducts = view.findViewById(R.id.rvSuggestedProducts);
@@ -101,6 +128,7 @@ public class ProfileFragment extends Fragment {
         layoutAddress = view.findViewById(R.id.layoutAddress);
         layoutResetPassword = view.findViewById(R.id.layoutResetPassword);
         btnLogout = view.findViewById(R.id.btnLogout);
+        btnAddAvatar = view.findViewById(R.id.btnAddAvatar);
     }
 
     private void showSessionUser() {
@@ -172,6 +200,7 @@ public class ProfileFragment extends Fragment {
 
         Glide.with(ProfileFragment.this)
                 .load(buildImageUrl(avatarUrl))
+                .circleCrop()
                 .placeholder(android.R.drawable.ic_menu_myplaces)
                 .error(android.R.drawable.ic_menu_myplaces)
                 .into(imgAvatar);
@@ -240,11 +269,14 @@ public class ProfileFragment extends Fragment {
 
             if (status.equals("PENDING")) {
                 pending++;
-            } else if (status.equals("CONFIRMED") || status.equals("PROCESSING") || status.equals("PACKING")) {
+            } else if (status.equals("CONFIRMED")
+                    || status.equals("PROCESSING")
+                    || status.equals("PACKING")) {
                 packing++;
-            } else if (status.equals("SHIPPING") || status.equals("DELIVERING")) {
+            } else if (status.equals("SHIPPING")
+                    || status.equals("DELIVERING")) {
                 shipping++;
-            } else if (status.equals("DELIVERED") || status.equals("COMPLETED")) {
+            } else if (status.equals("COMPLETED")) {
                 review++;
             }
         }
@@ -303,14 +335,14 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupClickEvents() {
-        btnCart.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Chức năng giỏ hàng đang phát triển", Toast.LENGTH_SHORT).show();
-        });
+        btnCart.setOnClickListener(v -> openCart());
+
 
         tvViewOrders.setOnClickListener(v -> openOrderHistory());
 
         imgAvatar.setOnClickListener(v -> openEditProfile());
         tvFullName.setOnClickListener(v -> openEditProfile());
+        btnAddAvatar.setOnClickListener(v -> avatarPickerLauncher.launch("image/*"));
 
         layoutAddress.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), AddressActivity.class);
@@ -320,6 +352,20 @@ public class ProfileFragment extends Fragment {
         layoutResetPassword.setOnClickListener(v -> sendResetPasswordEmail());
 
         btnLogout.setOnClickListener(v -> showLogoutDialog());
+        layoutReview.setOnClickListener(v -> openReviewOrders());
+    }
+
+    private void openCart() {
+        if (userId == null) {
+            Toast.makeText(requireContext(), "Vui lòng đăng nhập để xem giỏ hàng", Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent(requireContext(), LoginActivity.class);
+            startActivity(intent);
+            return;
+        }
+
+        Intent intent = new Intent(requireContext(), CartActivity.class);
+        startActivity(intent);
     }
 
     private void openOrderHistory() {
@@ -396,6 +442,188 @@ public class ProfileFragment extends Fragment {
             loadUserProfile();
             loadOrderStatus();
             loadSuggestedProducts();
+            loadCartCount();
         }
     }
+    private void setupAvatarPicker() {
+        avatarPickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        uploadAvatar(uri);
+                    }
+                }
+        );
+    }
+
+    private void uploadAvatar(Uri uri) {
+        if (userId == null) {
+            Toast.makeText(requireContext(), "Không tìm thấy userId", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            MultipartBody.Part imagePart = createImagePart(uri);
+
+            btnAddAvatar.setEnabled(false);
+            Toast.makeText(requireContext(), "Đang upload ảnh đại diện...", Toast.LENGTH_SHORT).show();
+
+            ApiClient.getApiService()
+                    .uploadUserAvatar(userId, imagePart)
+                    .enqueue(new Callback<User>() {
+                        @Override
+                        public void onResponse(Call<User> call, Response<User> response) {
+                            if (!isAdded()) {
+                                return;
+                            }
+
+                            btnAddAvatar.setEnabled(true);
+
+                            if (response.isSuccessful() && response.body() != null) {
+                                User updatedUser = response.body();
+
+                                sessionManager.saveUser(updatedUser);
+                                loadAvatar(updatedUser.getAvatarUrl());
+
+                                Toast.makeText(requireContext(), "Cập nhật ảnh đại diện thành công", Toast.LENGTH_SHORT).show();
+                            } else {
+                                String errorMessage = "Upload thất bại. Code: " + response.code();
+
+                                try {
+                                    if (response.errorBody() != null) {
+                                        errorMessage += "\n" + response.errorBody().string();
+                                    }
+                                } catch (Exception e) {
+                                    errorMessage += "\nKhông đọc được lỗi server";
+                                }
+
+                                Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<User> call, Throwable t) {
+                            if (!isAdded()) {
+                                return;
+                            }
+
+                            btnAddAvatar.setEnabled(true);
+                            Toast.makeText(requireContext(), "Lỗi upload ảnh: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+        } catch (Exception e) {
+            btnAddAvatar.setEnabled(true);
+            Toast.makeText(requireContext(), "Không đọc được ảnh: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private MultipartBody.Part createImagePart(Uri uri) throws IOException {
+        String mimeType = requireContext().getContentResolver().getType(uri);
+
+        if (mimeType == null) {
+            mimeType = "image/jpeg";
+        }
+
+        String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
+
+        if (extension == null) {
+            extension = "jpg";
+        }
+
+        File tempFile = new File(
+                requireContext().getCacheDir(),
+                "avatar_" + System.currentTimeMillis() + "." + extension
+        );
+
+        try (InputStream inputStream = requireContext().getContentResolver().openInputStream(uri);
+             FileOutputStream outputStream = new FileOutputStream(tempFile)) {
+
+            if (inputStream == null) {
+                throw new IOException("Không mở được file ảnh");
+            }
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+        }
+
+        RequestBody requestBody = RequestBody.create(MediaType.parse(mimeType), tempFile);
+        return MultipartBody.Part.createFormData("file", tempFile.getName(), requestBody);
+    }
+
+    private void loadCartCount() {
+        Long currentUserId = sessionManager.getUserId();
+
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (currentUserId == null) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        ApiClient.getApiService().getCartByUserId(currentUserId).enqueue(new Callback<List<CartItem>>() {
+            @Override
+            public void onResponse(Call<List<CartItem>> call, Response<List<CartItem>> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                if (response.isSuccessful() && response.body() != null) {
+                    int totalQuantity = 0;
+
+                    for (CartItem item : response.body()) {
+                        if (item.getQuantity() != null) {
+                            totalQuantity += item.getQuantity();
+                        }
+                    }
+
+                    showCartBadge(totalQuantity);
+                } else {
+                    txtCartBadge.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<CartItem>> call, Throwable t) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                if (txtCartBadge != null) {
+                    txtCartBadge.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    private void showCartBadge(int totalQuantity) {
+        if (txtCartBadge == null) {
+            return;
+        }
+
+        if (totalQuantity <= 0) {
+            txtCartBadge.setVisibility(View.GONE);
+            return;
+        }
+
+        txtCartBadge.setVisibility(View.VISIBLE);
+
+        if (totalQuantity > 99) {
+            txtCartBadge.setText("99+");
+        } else {
+            txtCartBadge.setText(String.valueOf(totalQuantity));
+        }
+    }
+    private void openReviewOrders() {
+        Intent intent = new Intent(requireContext(), OrderHistoryActivity.class);
+        intent.putExtra("filterStatus", "REVIEW");
+        startActivity(intent);
+    }
+
 }

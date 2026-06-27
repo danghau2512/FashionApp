@@ -30,11 +30,13 @@ public class OrderHistoryActivity extends AppCompatActivity {
     private SessionManager sessionManager;
     private OrderHistoryAdapter orderHistoryAdapter;
     private Long userId;
+    private String filterStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_history);
+        filterStatus = getIntent().getStringExtra("filterStatus");
 
         sessionManager = new SessionManager(this);
         userId = sessionManager.getUserId();
@@ -70,9 +72,16 @@ public class OrderHistoryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<OrderSummary>> call, Response<List<OrderSummary>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<OrderSummary> orders = response.body();
+                    List<OrderSummary> orders = filterOrders(response.body());
 
                     orderHistoryAdapter.setData(orders);
+
+                    if ("REVIEW".equals(filterStatus)) {
+                        tvEmptyOrders.setText("Bạn không có đơn hàng nào chờ đánh giá");
+                    } else {
+                        tvEmptyOrders.setText("Bạn chưa có đơn hàng nào");
+                    }
+
                     showEmpty(orders.isEmpty());
                 } else {
                     orderHistoryAdapter.setData(new ArrayList<>());
@@ -105,5 +114,31 @@ public class OrderHistoryActivity extends AppCompatActivity {
         if (userId != null) {
             loadOrderHistory();
         }
+    }
+
+    private List<OrderSummary> filterOrders(List<OrderSummary> orders) {
+        if (orders == null) {
+            return new ArrayList<>();
+        }
+
+        if (!"REVIEW".equals(filterStatus)) {
+            return orders;
+        }
+
+        List<OrderSummary> filteredOrders = new ArrayList<>();
+
+        for (OrderSummary order : orders) {
+            String status = order.getOrderStatus();
+
+            if (status == null) {
+                continue;
+            }
+
+            if (status.equals("COMPLETED")) {
+                filteredOrders.add(order);
+            }
+        }
+
+        return filteredOrders;
     }
 }
