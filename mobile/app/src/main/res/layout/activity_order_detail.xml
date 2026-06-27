@@ -184,6 +184,18 @@
                 android:textStyle="bold" />
 
             <Button
+                android:id="@+id/btnCompleteOrder"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#2E7D32"
+                android:text="Đã nhận hàng"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <Button
                 android:id="@+id/btnCancelOrder"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"

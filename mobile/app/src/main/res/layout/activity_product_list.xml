@@ -134,15 +134,6 @@
                 android:textColor="@color/dark_text"
                 android:textSize="14sp" />
 
-            <CheckBox
-                android:id="@+id/cbGenderUnisex"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:text="Unisex"
-                android:textColor="@color/dark_text"
-                android:textSize="14sp" />
-
         </LinearLayout>
 
         <CheckBox

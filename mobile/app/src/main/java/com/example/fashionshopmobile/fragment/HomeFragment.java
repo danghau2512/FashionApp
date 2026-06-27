@@ -3,6 +3,11 @@ package com.example.fashionshopmobile.fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +16,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,8 +42,10 @@ import com.example.fashionshopmobile.model.Product;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.utils.SessionManager;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -53,6 +61,12 @@ public class HomeFragment extends Fragment {
     private TextView btnSearchIcon;
     private EditText edtSearch;
     private ImageView imgHomeAvatar;
+    private LinearLayout layoutSearchSuggestions;
+
+    private ImageView imgCategoryBanner;
+    private TextView tvBannerTitle;
+    private TextView tvBannerDesc;
+    private TextView tvBannerButton;
 
     private RecyclerView rvProducts;
     private RecyclerView rvCategories;
@@ -64,7 +78,14 @@ public class HomeFragment extends Fragment {
     private Long currentCategoryId = 0L;
     private String currentCategoryName = "Tất cả sản phẩm";
 
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Call<List<Product>> searchSuggestionCall;
+    private String lastSuggestionKeyword = "";
+
     private static final int HOME_PRODUCT_LIMIT = 4;
+    private static final int SEARCH_SUGGESTION_LIMIT = 5;
+
+
 
     @Nullable
     @Override
@@ -83,6 +104,7 @@ public class HomeFragment extends Fragment {
         setupProductList();
         setupCategoryList();
         setupClickEvents();
+        setupSearchSuggestions();
 
         loadCategories();
         loadProducts();
@@ -97,6 +119,11 @@ public class HomeFragment extends Fragment {
         txtCartBadge = view.findViewById(R.id.txtCartBadge);
         imgHomeAvatar = view.findViewById(R.id.imgHomeAvatar);
 
+        imgCategoryBanner = view.findViewById(R.id.imgCategoryBanner);
+        tvBannerTitle = view.findViewById(R.id.tvBannerTitle);
+        tvBannerDesc = view.findViewById(R.id.tvBannerDesc);
+        tvBannerButton = view.findViewById(R.id.tvBannerButton);
+
         rvProducts = view.findViewById(R.id.rvProducts);
         rvCategories = view.findViewById(R.id.rvCategories);
 
@@ -105,6 +132,7 @@ public class HomeFragment extends Fragment {
 
         btnSearchIcon = view.findViewById(R.id.btnSearchIcon);
         edtSearch = view.findViewById(R.id.edtSearch);
+        layoutSearchSuggestions = view.findViewById(R.id.layoutSearchSuggestions);
     }
 
     private void showUserName() {
@@ -134,11 +162,15 @@ public class HomeFragment extends Fragment {
                 currentCategoryId = 0L;
                 currentCategoryName = "Tất cả sản phẩm";
 
+                showDefaultBanner();
+
                 tvProductSectionTitle.setText("Sản phẩm mới");
                 loadProducts();
             } else {
                 currentCategoryId = category.getId();
                 currentCategoryName = category.getName();
+
+                showCategoryBanner(category);
 
                 tvProductSectionTitle.setText(category.getName());
                 loadProductsByCategory(category.getId());
@@ -155,6 +187,43 @@ public class HomeFragment extends Fragment {
         rvCategories.setAdapter(categoryAdapter);
     }
 
+
+    private void showDefaultBanner() {
+        if (imgCategoryBanner != null) {
+            imgCategoryBanner.setVisibility(View.GONE);
+        }
+
+        tvBannerTitle.setText("SALE HÈ 2026");
+        tvBannerDesc.setText("Giảm đến 50% cho bộ sưu tập mới");
+        tvBannerButton.setText("Mua ngay");
+    }
+
+    private void showCategoryBanner(Category category) {
+        tvBannerTitle.setText(category.getName());
+
+        if (category.getDescription() != null && !category.getDescription().isEmpty()) {
+            tvBannerDesc.setText(category.getDescription());
+        } else {
+            tvBannerDesc.setText("Khám phá sản phẩm thuộc danh mục này");
+        }
+
+        tvBannerButton.setText("Xem ngay");
+
+        String imageUrl = category.getImageUrl();
+
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            imgCategoryBanner.setVisibility(View.GONE);
+            return;
+        }
+
+        imgCategoryBanner.setVisibility(View.VISIBLE);
+
+        Glide.with(HomeFragment.this)
+                .load(buildImageUrl(imageUrl))
+                .placeholder(R.drawable.bg_banner)
+                .error(R.drawable.bg_banner)
+                .into(imgCategoryBanner);
+    }
     private void setupClickEvents() {
         tvViewAllProducts.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), ProductListActivity.class);
@@ -191,6 +260,197 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void setupSearchSuggestions() {
+        edtSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                String keyword = text == null ? "" : text.toString().trim();
+
+                searchHandler.removeCallbacksAndMessages(null);
+
+                if (keyword.isEmpty()) {
+                    hideSearchSuggestions();
+                    cancelSuggestionCall();
+                    return;
+                }
+
+                searchHandler.postDelayed(() -> loadSearchSuggestions(keyword), 350);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
+    }
+
+    private void loadSearchSuggestions(String keyword) {
+        if (!isAdded()) {
+            return;
+        }
+
+        lastSuggestionKeyword = keyword;
+        cancelSuggestionCall();
+
+        searchSuggestionCall = ApiClient.getApiService()
+                .searchProducts(keyword, null, null, null, null, null);
+
+        searchSuggestionCall.enqueue(new Callback<List<Product>>() {
+            @Override
+            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                String currentKeyword = edtSearch.getText() == null
+                        ? ""
+                        : edtSearch.getText().toString().trim();
+
+                if (!currentKeyword.equals(lastSuggestionKeyword)) {
+                    return;
+                }
+
+                if (response.isSuccessful() && response.body() != null) {
+                    showSearchSuggestions(response.body());
+                } else {
+                    hideSearchSuggestions();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Product>> call, Throwable t) {
+                if (call.isCanceled()) {
+                    return;
+                }
+
+                hideSearchSuggestions();
+            }
+        });
+    }
+
+    private void showSearchSuggestions(List<Product> products) {
+        layoutSearchSuggestions.removeAllViews();
+
+        if (products == null || products.isEmpty()) {
+            hideSearchSuggestions();
+            return;
+        }
+
+        int count = Math.min(products.size(), SEARCH_SUGGESTION_LIMIT);
+
+        for (int i = 0; i < count; i++) {
+            Product product = products.get(i);
+
+            LinearLayout itemLayout = new LinearLayout(requireContext());
+            itemLayout.setOrientation(LinearLayout.HORIZONTAL);
+            itemLayout.setGravity(Gravity.CENTER_VERTICAL);
+            itemLayout.setPadding(dpToPx(10), dpToPx(8), dpToPx(10), dpToPx(8));
+            itemLayout.setBackgroundColor(getResources().getColor(R.color.white, requireContext().getTheme()));
+
+            ImageView imgProduct = new ImageView(requireContext());
+            LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                    dpToPx(56),
+                    dpToPx(56)
+            );
+            imgProduct.setLayoutParams(imageParams);
+            imgProduct.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            imgProduct.setImageResource(android.R.drawable.ic_menu_gallery);
+
+            if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                Glide.with(HomeFragment.this)
+                        .load(buildImageUrl(product.getImageUrl()))
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.ic_menu_gallery)
+                        .into(imgProduct);
+            }
+
+            LinearLayout textLayout = new LinearLayout(requireContext());
+            textLayout.setOrientation(LinearLayout.VERTICAL);
+            textLayout.setPadding(dpToPx(10), 0, 0, 0);
+
+            LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1
+            );
+            textLayout.setLayoutParams(textParams);
+
+            TextView tvName = new TextView(requireContext());
+            tvName.setText(product.getName());
+            tvName.setTextColor(getResources().getColor(R.color.dark_text, requireContext().getTheme()));
+            tvName.setTextSize(13);
+            tvName.setMaxLines(2);
+
+            TextView tvPrice = new TextView(requireContext());
+            tvPrice.setText(formatProductPrice(product));
+            tvPrice.setTextColor(getResources().getColor(R.color.primary_pink, requireContext().getTheme()));
+            tvPrice.setTextSize(13);
+            tvPrice.setPadding(0, dpToPx(3), 0, 0);
+
+            textLayout.addView(tvName);
+            textLayout.addView(tvPrice);
+
+            itemLayout.addView(imgProduct);
+            itemLayout.addView(textLayout);
+
+            itemLayout.setOnClickListener(v -> openProductDetailFromSuggestion(product));
+
+            layoutSearchSuggestions.addView(itemLayout);
+
+            if (i < count - 1) {
+                View divider = new View(requireContext());
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        1
+                );
+                divider.setLayoutParams(params);
+                divider.setBackgroundColor(0xFFEFEFEF);
+                layoutSearchSuggestions.addView(divider);
+            }
+        }
+
+        layoutSearchSuggestions.setVisibility(View.VISIBLE);
+    }
+
+    private void hideSearchSuggestions() {
+        if (layoutSearchSuggestions != null) {
+            layoutSearchSuggestions.setVisibility(View.GONE);
+            layoutSearchSuggestions.removeAllViews();
+        }
+    }
+
+    private void cancelSuggestionCall() {
+        if (searchSuggestionCall != null && !searchSuggestionCall.isCanceled()) {
+            searchSuggestionCall.cancel();
+        }
+    }
+
+    private String formatProductPrice(Product product) {
+        NumberFormat formatter = NumberFormat.getInstance(new Locale("vi", "VN"));
+
+        if (product.getSalePrice() != null) {
+            return formatter.format(product.getSalePrice()) + "đ";
+        }
+
+        if (product.getPrice() != null) {
+            return formatter.format(product.getPrice()) + "đ";
+        }
+
+        return "Liên hệ";
+    }
+
+    private void openProductDetailFromSuggestion(Product product) {
+        hideKeyboard();
+        hideSearchSuggestions();
+
+        Intent intent = new Intent(requireContext(), ProductDetailActivity.class);
+        intent.putExtra("product_id", product.getId());
+        startActivity(intent);
+    }
+
     private void openSearchResult() {
         String keyword = edtSearch.getText() == null ? "" : edtSearch.getText().toString().trim();
 
@@ -200,6 +460,7 @@ public class HomeFragment extends Fragment {
         }
 
         hideKeyboard();
+        hideSearchSuggestions();
 
         Intent intent = new Intent(requireContext(), ProductListActivity.class);
         intent.putExtra("keyword", keyword);
@@ -307,6 +568,14 @@ public class HomeFragment extends Fragment {
             loadHomeUserAvatar();
             loadCartCount();
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+
+        searchHandler.removeCallbacksAndMessages(null);
+        cancelSuggestionCall();
     }
 
     private void loadCategories() {
@@ -471,5 +740,9 @@ public class HomeFragment extends Fragment {
         } else {
             txtCartBadge.setText(String.valueOf(totalQuantity));
         }
+    }
+
+    private int dpToPx(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
     }
 }

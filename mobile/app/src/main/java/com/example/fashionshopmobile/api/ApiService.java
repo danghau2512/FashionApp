@@ -6,8 +6,10 @@ import com.example.fashionshopmobile.model.AdminOrderSummary;
 import com.example.fashionshopmobile.model.AdminProductResponse;
 import com.example.fashionshopmobile.model.AdminProductVariantResponse;
 import com.example.fashionshopmobile.model.AdminStatistics;
+import com.example.fashionshopmobile.model.AdminUser;
 import com.example.fashionshopmobile.model.CartItem;
 import com.example.fashionshopmobile.model.Category;
+import com.example.fashionshopmobile.model.ImageUploadResponse;
 import com.example.fashionshopmobile.model.OrderResponse;
 import com.example.fashionshopmobile.model.OrderSummary;
 import com.example.fashionshopmobile.model.Product;
@@ -17,16 +19,18 @@ import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.StoreLocation;
 import com.example.fashionshopmobile.model.User;
 import com.example.fashionshopmobile.model.UserAddress;
+import com.example.fashionshopmobile.model.VnPayPaymentResponse;
 import com.example.fashionshopmobile.model.shipping.GhnDistrict;
 import com.example.fashionshopmobile.model.shipping.GhnProvince;
 import com.example.fashionshopmobile.model.shipping.GhnWard;
-import com.example.fashionshopmobile.model.VnPayPaymentResponse;
 import com.example.fashionshopmobile.model.shipping.ShippingQuote;
 import com.example.fashionshopmobile.request.AddCartRequest;
 import com.example.fashionshopmobile.request.AddressRequest;
 import com.example.fashionshopmobile.request.AdminOrderActionRequest;
 import com.example.fashionshopmobile.request.AdminProductRequest;
 import com.example.fashionshopmobile.request.AdminProductVariantRequest;
+import com.example.fashionshopmobile.request.AdminUserRequest;
+import com.example.fashionshopmobile.request.AdminUserStatusRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
 import com.example.fashionshopmobile.request.CreateProductReviewRequest;
 import com.example.fashionshopmobile.request.ShippingQuoteRequest;
@@ -39,18 +43,15 @@ import com.example.fashionshopmobile.request.UserSyncRequest;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.example.fashionshopmobile.model.ImageUploadResponse;
-
 import okhttp3.MultipartBody;
-import retrofit2.http.Multipart;
-import retrofit2.http.Part;
-
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
+import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -100,6 +101,13 @@ public interface ApiService {
     Call<User> updateUser(
             @Path("id") Long id,
             @Body UpdateUserRequest request
+    );
+
+    @Multipart
+    @POST("api/users/{userId}/avatar")
+    Call<User> uploadUserAvatar(
+            @Path("userId") Long userId,
+            @Part MultipartBody.Part file
     );
 
     @GET("api/addresses/user/{userId}")
@@ -161,6 +169,18 @@ public interface ApiService {
 
     @POST("api/shipping/quote")
     Call<ShippingQuote> getShippingQuote(@Body ShippingQuoteRequest request);
+
+    @POST("api/payments/vnpay/create/{orderId}")
+    Call<VnPayPaymentResponse> createVnPayPayment(@Path("orderId") Long orderId);
+
+    @PUT("api/orders/{orderId}/complete")
+    Call<OrderResponse> completeOrder(
+            @Path("orderId") Long orderId,
+            @Query("userId") Long userId
+    );
+
+    @GET("api/stores")
+    Call<List<StoreLocation>> getStoreLocations();
 
     @GET("api/admin/dashboard")
     Call<AdminDashboard> getAdminDashboard();
@@ -234,6 +254,13 @@ public interface ApiService {
             @Query("noSaleMonths") Integer noSaleMonths
     );
 
+    @Multipart
+    @POST("api/admin/uploads/images")
+    Call<ImageUploadResponse> uploadAdminImage(
+            @Query("adminId") Long adminId,
+            @Part MultipartBody.Part file
+    );
+
     @GET("api/reviews/product/{productId}")
     Call<List<ProductReview>> getProductReviews(@Path("productId") Long productId);
 
@@ -275,27 +302,41 @@ public interface ApiService {
             @Body AdminOrderActionRequest request
     );
 
-    @POST("api/payments/vnpay/create/{orderId}")
-    Call<VnPayPaymentResponse> createVnPayPayment(@Path("orderId") Long orderId);
-
-
-
-    @Multipart
-    @POST("api/admin/uploads/images")
-    Call<ImageUploadResponse> uploadAdminImage(
-            @Query("adminId") Long adminId,
-            @Part MultipartBody.Part file
-
-    );
-    @PUT("api/orders/{orderId}/complete")
-    Call<OrderResponse> completeOrder(
+    @PUT("api/admin/orders/{orderId}/complete")
+    Call<AdminOrderDetail> completeAdminOrder(
             @Path("orderId") Long orderId,
-            @Query("userId") Long userId
+            @Body AdminOrderActionRequest request
     );
-    @Multipart
-    @POST("api/users/{userId}/avatar")
-    Call<User> uploadUserAvatar(
-            @Path("userId") Long userId,
-            @Part MultipartBody.Part file
+
+    @GET("api/admin/users")
+    Call<List<AdminUser>> getAdminUsers(
+            @Query("keyword") String keyword,
+            @Query("role") String role,
+            @Query("status") String status
+    );
+
+    @GET("api/admin/users/{id}")
+    Call<AdminUser> getAdminUserById(
+            @Path("id") Long id
+    );
+
+    @POST("api/admin/users")
+    Call<AdminUser> createAdminUser(
+            @Query("adminId") Long adminId,
+            @Body AdminUserRequest request
+    );
+
+    @PUT("api/admin/users/{id}")
+    Call<AdminUser> updateAdminUser(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminUserRequest request
+    );
+
+    @PUT("api/admin/users/{id}/status")
+    Call<AdminUser> updateAdminUserStatus(
+            @Path("id") Long id,
+            @Query("adminId") Long adminId,
+            @Body AdminUserStatusRequest request
     );
 }

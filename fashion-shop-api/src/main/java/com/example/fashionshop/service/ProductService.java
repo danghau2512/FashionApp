@@ -43,10 +43,6 @@ public class ProductService {
         this.userRepository = userRepository;
     }
 
-    // =========================
-    // API khách hàng
-    // =========================
-
     public List<ProductResponse> getAllProducts() {
         return productRepository.findByStatus(STATUS_ACTIVE)
                 .stream()
@@ -139,10 +135,6 @@ public class ProductService {
                 .toList();
     }
 
-    // =========================
-    // API admin
-    // =========================
-
     public List<AdminProductResponse> getAdminProducts(String keyword, String status, Long categoryId) {
         String normalizedStatus = normalizeOptionalStatus(status);
 
@@ -223,10 +215,6 @@ public class ProductService {
         Product savedProduct = productRepository.save(product);
         return toAdminProductResponse(savedProduct);
     }
-
-    // =========================
-    // Validate + helper
-    // =========================
 
     private void checkAdmin(Long adminId) {
         if (adminId == null) {
@@ -325,9 +313,23 @@ public class ProductService {
             return new ArrayList<>();
         }
 
-        return genders.stream()
-                .filter(gender -> gender != null && !gender.trim().isEmpty())
-                .map(String::trim)
+        List<String> normalizedGenders = new ArrayList<>();
+
+        for (String gender : genders) {
+            if (gender == null || gender.trim().isEmpty()) {
+                continue;
+            }
+
+            String value = gender.trim().toUpperCase(Locale.ROOT);
+
+            if (value.equals("NAM") || value.equals("MALE") || value.equals("MEN")) {
+                normalizedGenders.add("MEN");
+            } else if (value.equals("NỮ") || value.equals("NU") || value.equals("FEMALE") || value.equals("WOMEN")) {
+                normalizedGenders.add("WOMEN");
+            }
+        }
+
+        return normalizedGenders.stream()
                 .distinct()
                 .toList();
     }

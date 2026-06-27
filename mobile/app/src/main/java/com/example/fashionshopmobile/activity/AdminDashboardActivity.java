@@ -97,7 +97,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
 
         btnAdminUsers.setOnClickListener(v -> {
-            Toast.makeText(this, "Quản lý người dùng sẽ làm ở bước sau", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminUserListActivity.class);
+            startActivity(intent);
         });
         btnAdminStatistics.setOnClickListener(v -> {
             Intent intent = new Intent(AdminDashboardActivity.this, AdminStatisticsActivity.class);
