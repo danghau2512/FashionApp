@@ -16,7 +16,7 @@ public interface ShopOrderRepository extends JpaRepository<ShopOrder, Long> {
     @Query("""
         SELECT COALESCE(SUM(o.totalAmount), 0)
         FROM ShopOrder o
-        WHERE o.orderStatus <> 'CANCELLED'
+        WHERE o.orderStatus = 'COMPLETED'
     """)
     BigDecimal getTotalRevenue();
 }

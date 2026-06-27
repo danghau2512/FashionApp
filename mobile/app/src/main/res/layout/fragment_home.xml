@@ -138,6 +138,19 @@
 
                 </LinearLayout>
 
+                <!-- SEARCH SUGGESTIONS -->
+                <LinearLayout
+                    android:id="@+id/layoutSearchSuggestions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@color/white"
+                    android:elevation="4dp"
+                    android:orientation="vertical"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:visibility="gone" />
+
             </LinearLayout>
 
             <!-- CONTENT -->
@@ -228,7 +241,7 @@
                     android:layout_marginTop="10dp"
                     android:nestedScrollingEnabled="false" />
 
-                <!-- PRODUCT TITLE + VIEW ALL -->
+                <!-- PRODUCT TITLE -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -270,6 +283,5 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
-
 
 </LinearLayout>
