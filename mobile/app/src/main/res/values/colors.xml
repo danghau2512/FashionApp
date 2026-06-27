@@ -8,4 +8,11 @@
     <color name="sale_red">#EE4D2D</color>
     <color name="white">#FFFFFF</color>
 
+
+    <color name="auth_bg">#FFF7FB</color>
+    <color name="auth_primary">#6F4DB2</color>
+    <color name="auth_primary_dark">#56339A</color>
+    <color name="auth_text">#2F2940</color>
+    <color name="auth_hint">#8D8797</color>
+    <color name="auth_border">#E2D8F2</color>
 </resources>

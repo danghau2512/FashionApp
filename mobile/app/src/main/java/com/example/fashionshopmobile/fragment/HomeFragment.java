@@ -54,6 +54,11 @@ public class HomeFragment extends Fragment {
     private EditText edtSearch;
     private ImageView imgHomeAvatar;
 
+    private ImageView imgCategoryBanner;
+    private TextView tvBannerTitle;
+    private TextView tvBannerDesc;
+    private TextView tvBannerButton;
+
     private RecyclerView rvProducts;
     private RecyclerView rvCategories;
 
@@ -65,6 +70,8 @@ public class HomeFragment extends Fragment {
     private String currentCategoryName = "Tất cả sản phẩm";
 
     private static final int HOME_PRODUCT_LIMIT = 4;
+
+
 
     @Nullable
     @Override
@@ -96,6 +103,11 @@ public class HomeFragment extends Fragment {
         btnCart = view.findViewById(R.id.btnCart);
         txtCartBadge = view.findViewById(R.id.txtCartBadge);
         imgHomeAvatar = view.findViewById(R.id.imgHomeAvatar);
+
+        imgCategoryBanner = view.findViewById(R.id.imgCategoryBanner);
+        tvBannerTitle = view.findViewById(R.id.tvBannerTitle);
+        tvBannerDesc = view.findViewById(R.id.tvBannerDesc);
+        tvBannerButton = view.findViewById(R.id.tvBannerButton);
 
         rvProducts = view.findViewById(R.id.rvProducts);
         rvCategories = view.findViewById(R.id.rvCategories);
@@ -134,11 +146,15 @@ public class HomeFragment extends Fragment {
                 currentCategoryId = 0L;
                 currentCategoryName = "Tất cả sản phẩm";
 
+                showDefaultBanner();
+
                 tvProductSectionTitle.setText("Sản phẩm mới");
                 loadProducts();
             } else {
                 currentCategoryId = category.getId();
                 currentCategoryName = category.getName();
+
+                showCategoryBanner(category);
 
                 tvProductSectionTitle.setText(category.getName());
                 loadProductsByCategory(category.getId());
@@ -155,6 +171,43 @@ public class HomeFragment extends Fragment {
         rvCategories.setAdapter(categoryAdapter);
     }
 
+
+    private void showDefaultBanner() {
+        if (imgCategoryBanner != null) {
+            imgCategoryBanner.setVisibility(View.GONE);
+        }
+
+        tvBannerTitle.setText("SALE HÈ 2026");
+        tvBannerDesc.setText("Giảm đến 50% cho bộ sưu tập mới");
+        tvBannerButton.setText("Mua ngay");
+    }
+
+    private void showCategoryBanner(Category category) {
+        tvBannerTitle.setText(category.getName());
+
+        if (category.getDescription() != null && !category.getDescription().isEmpty()) {
+            tvBannerDesc.setText(category.getDescription());
+        } else {
+            tvBannerDesc.setText("Khám phá sản phẩm thuộc danh mục này");
+        }
+
+        tvBannerButton.setText("Xem ngay");
+
+        String imageUrl = category.getImageUrl();
+
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            imgCategoryBanner.setVisibility(View.GONE);
+            return;
+        }
+
+        imgCategoryBanner.setVisibility(View.VISIBLE);
+
+        Glide.with(HomeFragment.this)
+                .load(buildImageUrl(imageUrl))
+                .placeholder(R.drawable.bg_banner)
+                .error(R.drawable.bg_banner)
+                .into(imgCategoryBanner);
+    }
     private void setupClickEvents() {
         tvViewAllProducts.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), ProductListActivity.class);
