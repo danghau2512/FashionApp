@@ -31,6 +31,7 @@ import com.example.fashionshopmobile.request.AdminProductRequest;
 import com.example.fashionshopmobile.request.AdminProductVariantRequest;
 import com.example.fashionshopmobile.request.AdminUserRequest;
 import com.example.fashionshopmobile.request.AdminUserStatusRequest;
+import com.example.fashionshopmobile.request.CreateEventRequest;
 import com.example.fashionshopmobile.request.CreateOrderRequest;
 import com.example.fashionshopmobile.request.CreateProductReviewRequest;
 import com.example.fashionshopmobile.request.ShippingQuoteRequest;
@@ -339,4 +340,8 @@ public interface ApiService {
             @Query("adminId") Long adminId,
             @Body AdminUserStatusRequest request
     );
+    @POST("api/events")
+    Call<Void> createProductEvent(@Body CreateEventRequest request);
+    @GET("api/recommendations/users/{userId}")
+    Call<List<Product>> getRecommendedProducts(@Path("userId") Long userId, @Query("limit") Integer limit);
 }

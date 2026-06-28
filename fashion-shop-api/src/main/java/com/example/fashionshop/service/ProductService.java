@@ -334,7 +334,7 @@ public class ProductService {
                 .toList();
     }
 
-    private ProductResponse toProductResponse(Product product) {
+    public ProductResponse toProductResponse(Product product) {
         return new ProductResponse(
                 product.getId(),
                 product.getCategory() != null ? product.getCategory().getId() : null,

@@ -20,14 +20,15 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ProductVariantRepository productVariantRepository;
     private final GhnShippingService ghnShippingService;
-
-    public OrderService(UserRepository userRepository, CartItemRepository cartItemRepository, ShopOrderRepository shopOrderRepository, OrderItemRepository orderItemRepository, ProductVariantRepository productVariantRepository, GhnShippingService ghnShippingService) {
+    private final UserProductEventService eventService;
+    public OrderService(UserRepository userRepository, CartItemRepository cartItemRepository, ShopOrderRepository shopOrderRepository, OrderItemRepository orderItemRepository, ProductVariantRepository productVariantRepository, GhnShippingService ghnShippingService, UserProductEventService eventService) {
         this.userRepository = userRepository;
         this.cartItemRepository = cartItemRepository;
         this.shopOrderRepository = shopOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productVariantRepository = productVariantRepository;
         this.ghnShippingService = ghnShippingService;
+        this.eventService = eventService;
     }
 
     @Transactional
@@ -146,6 +147,9 @@ public class OrderService {
         }
 
         List<OrderItem> savedOrderItems = orderItemRepository.saveAll(orderItems);
+        if ("COD".equalsIgnoreCase(savedOrder.getPaymentMethod())) {
+            eventService.recordPurchaseEvents(savedOrder.getId());
+        }
 
         cartItemRepository.deleteAll(selectedCartItems);
 

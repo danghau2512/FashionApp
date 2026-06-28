@@ -70,8 +70,12 @@ public class HomeFragment extends Fragment {
 
     private RecyclerView rvProducts;
     private RecyclerView rvCategories;
+    private RecyclerView rvHomeRecommendations;
+    private LinearLayout layoutHomeRecommendations;
 
     private ProductAdapter productAdapter;
+    private ProductAdapter recommendationAdapter;
+
     private CategoryAdapter categoryAdapter;
     private SessionManager sessionManager;
 
@@ -83,6 +87,8 @@ public class HomeFragment extends Fragment {
     private String lastSuggestionKeyword = "";
 
     private static final int HOME_PRODUCT_LIMIT = 4;
+    private static final int HOME_RECOMMENDATION_LIMIT = 4;
+
     private static final int SEARCH_SUGGESTION_LIMIT = 5;
 
 
@@ -102,12 +108,14 @@ public class HomeFragment extends Fragment {
         showUserName();
         loadHomeUserAvatar();
         setupProductList();
+        setupRecommendationList();
         setupCategoryList();
         setupClickEvents();
         setupSearchSuggestions();
 
         loadCategories();
         loadProducts();
+        loadRecommendations();
         loadCartCount();
 
         return view;
@@ -126,7 +134,8 @@ public class HomeFragment extends Fragment {
 
         rvProducts = view.findViewById(R.id.rvProducts);
         rvCategories = view.findViewById(R.id.rvCategories);
-
+        rvHomeRecommendations = view.findViewById(R.id.rvHomeRecommendations);
+        layoutHomeRecommendations = view.findViewById(R.id.layoutHomeRecommendations);
         tvProductSectionTitle = view.findViewById(R.id.tvProductSectionTitle);
         tvViewAllProducts = view.findViewById(R.id.tvViewAllProducts);
 
@@ -740,6 +749,53 @@ public class HomeFragment extends Fragment {
         } else {
             txtCartBadge.setText(String.valueOf(totalQuantity));
         }
+    }
+    private void loadRecommendations() {
+        Long userId = sessionManager.getUserId();
+
+        if (userId == null) {
+            recommendationAdapter.setData(new ArrayList<>());
+            layoutHomeRecommendations.setVisibility(View.GONE);
+            return;
+        }
+
+        ApiClient.getApiService().getRecommendedProducts(userId, HOME_RECOMMENDATION_LIMIT).enqueue(new Callback<List<Product>>() {
+            @Override
+            public void onResponse(Call<List<Product>> call, Response<List<Product>> response) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
+                    recommendationAdapter.setData(new ArrayList<>());
+                    layoutHomeRecommendations.setVisibility(View.GONE);
+                    return;
+                }
+
+                recommendationAdapter.setData(response.body());
+                layoutHomeRecommendations.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onFailure(Call<List<Product>> call, Throwable throwable) {
+                if (!isAdded()) {
+                    return;
+                }
+
+                recommendationAdapter.setData(new ArrayList<>());
+                layoutHomeRecommendations.setVisibility(View.GONE);
+            }
+        });
+    }
+    private void setupRecommendationList() {
+        recommendationAdapter = new ProductAdapter(product -> {
+            Intent intent = new Intent(requireContext(), ProductDetailActivity.class);
+            intent.putExtra("product_id", product.getId());
+            startActivity(intent);
+        });
+
+        rvHomeRecommendations.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvHomeRecommendations.setAdapter(recommendationAdapter);
     }
 
     private int dpToPx(int dp) {
