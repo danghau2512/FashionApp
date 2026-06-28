@@ -24,15 +24,16 @@ public class CartService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
-
+    private final UserProductEventService eventService;
     public CartService(CartItemRepository cartItemRepository,
                        UserRepository userRepository,
                        ProductRepository productRepository,
-                       ProductVariantRepository productVariantRepository) {
+                       ProductVariantRepository productVariantRepository, UserProductEventService eventService) {
         this.cartItemRepository = cartItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
+        this.eventService = eventService;
     }
 
     public CartItemResponse addToCart(AddCartRequest request) {
@@ -79,6 +80,7 @@ public class CartService {
         cartItem.setQuantity(newQuantity);
 
         CartItem savedCartItem = cartItemRepository.save(cartItem);
+        eventService.recordEvent(user.getId(), product.getId(), "ADD_TO_CART");
 
         return toCartItemResponse(savedCartItem);
     }

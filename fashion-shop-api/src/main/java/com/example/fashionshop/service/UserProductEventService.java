@@ -9,7 +9,11 @@ import com.example.fashionshop.repository.ProductRepository;
 import com.example.fashionshop.repository.UserProductEventRepository;
 import com.example.fashionshop.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.example.fashionshop.entity.OrderItem;
+import com.example.fashionshop.repository.OrderItemRepository;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 @Service
@@ -18,28 +22,28 @@ public class UserProductEventService {
     private final UserProductEventRepository eventRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-
+    private final OrderItemRepository orderItemRepository;
     public UserProductEventService(UserProductEventRepository eventRepository,
                                    UserRepository userRepository,
-                                   ProductRepository productRepository) {
+                                   ProductRepository productRepository, OrderItemRepository orderItemRepository) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     public EventResponse createEvent(CreateEventRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+        return recordEvent(request.getUserId(), request.getProductId(), request.getEventType());
+    }
+    public EventResponse recordEvent(Long userId, Long productId, String eventTypeValue) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
         if (!"ACTIVE".equals(product.getStatus())) {
             throw new RuntimeException("Sản phẩm hiện không hoạt động");
         }
 
-        String eventType = request.getEventType().toUpperCase();
-
+        String eventType = eventTypeValue.trim().toUpperCase();
         Integer score = getScoreByEventType(eventType);
 
         UserProductEvent event = new UserProductEvent();
@@ -48,9 +52,23 @@ public class UserProductEventService {
         event.setEventType(eventType);
         event.setScore(score);
 
-        UserProductEvent savedEvent = eventRepository.save(event);
+        return toEventResponse(eventRepository.save(event));
+    }
+    public void recordPurchaseEvents(Long orderId) {
+        List<OrderItem> orderItems = orderItemRepository.findByOrder_Id(orderId);
+        Set<Long> recordedProductIds = new HashSet<>();
 
-        return toEventResponse(savedEvent);
+        for (OrderItem item : orderItems) {
+            if (item.getProduct() == null) {
+                continue;
+            }
+
+            Long productId = item.getProduct().getId();
+
+            if (recordedProductIds.add(productId)) {
+                recordEvent(item.getOrder().getUser().getId(), productId, "PURCHASE");
+            }
+        }
     }
 
     public List<EventResponse> getEventsByUserId(Long userId) {

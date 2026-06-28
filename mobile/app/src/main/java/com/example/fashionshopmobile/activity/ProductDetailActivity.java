@@ -33,6 +33,7 @@ import com.example.fashionshopmobile.model.ProductVariant;
 import com.example.fashionshopmobile.model.ReviewEligibility;
 import com.example.fashionshopmobile.model.ReviewableOrderItem;
 import com.example.fashionshopmobile.request.AddCartRequest;
+import com.example.fashionshopmobile.request.CreateEventRequest;
 import com.example.fashionshopmobile.request.CreateProductReviewRequest;
 import com.example.fashionshopmobile.utils.ImageUrlUtils;
 import com.example.fashionshopmobile.utils.SessionManager;
@@ -103,6 +104,7 @@ public class ProductDetailActivity extends AppCompatActivity {
     private boolean reviewSectionScrolled = false;
     private boolean autoReviewDialogHandled = false;
     private Long targetReviewOrderItemId;
+    private boolean viewEventSent = false;
 
     private final NumberFormat priceFormatter = NumberFormat.getInstance(new Locale("vi", "VN"));
 
@@ -254,6 +256,7 @@ public class ProductDetailActivity extends AppCompatActivity {
                     currentProduct = response.body();
                     showProduct(currentProduct);
                     loadRelatedProducts(currentProduct.getCategoryId());
+                    saveViewEvent();
                 } else {
                     showMessage("Không lấy được chi tiết sản phẩm");
                 }
@@ -985,5 +988,30 @@ public class ProductDetailActivity extends AppCompatActivity {
                 star.setText("☆");
             }
         }
+    }
+    private void saveViewEvent() {
+        if (viewEventSent) {
+            return;
+        }
+
+        Long userId = sessionManager.getUserId();
+
+        if (userId == null || productId == null || productId <= 0) {
+            return;
+        }
+
+        viewEventSent = true;
+
+        CreateEventRequest request = new CreateEventRequest(userId, productId, "VIEW");
+
+        ApiClient.getApiService().createProductEvent(request).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable throwable) {
+            }
+        });
     }
 }

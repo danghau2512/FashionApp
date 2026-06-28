@@ -4,6 +4,7 @@ import com.example.fashionshop.entity.ShopOrder;
 import com.example.fashionshop.integration.vnpay.dto.VnPayPaymentResponse;
 import com.example.fashionshop.integration.vnpay.dto.VnPayReturnResult;
 import com.example.fashionshop.repository.ShopOrderRepository;
+import com.example.fashionshop.service.UserProductEventService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,13 +31,14 @@ public class VnPayService {
     private final String tmnCode;
     private final String hashSecret;
     private final String returnUrl;
-
-    public VnPayService(ShopOrderRepository shopOrderRepository, @Value("${vnpay.payment-url}") String paymentUrl, @Value("${vnpay.tmn-code}") String tmnCode, @Value("${vnpay.hash-secret}") String hashSecret, @Value("${vnpay.return-url}") String returnUrl) {
+    private final UserProductEventService eventService;
+    public VnPayService(ShopOrderRepository shopOrderRepository, @Value("${vnpay.payment-url}") String paymentUrl, @Value("${vnpay.tmn-code}") String tmnCode, @Value("${vnpay.hash-secret}") String hashSecret, @Value("${vnpay.return-url}") String returnUrl, UserProductEventService eventService) {
         this.shopOrderRepository = shopOrderRepository;
         this.paymentUrl = paymentUrl;
         this.tmnCode = tmnCode;
         this.hashSecret = hashSecret;
         this.returnUrl = returnUrl;
+        this.eventService = eventService;
     }
 
     public VnPayPaymentResponse createPaymentUrl(Long orderId, String ipAddress) {
@@ -124,6 +126,8 @@ public class VnPayService {
         if (success) {
             order.setPaymentStatus("PAID");
             shopOrderRepository.save(order);
+            eventService.recordPurchaseEvents(order.getId());
+
             return new VnPayReturnResult(orderId, true, "Thanh toán thành công");
         }
 
